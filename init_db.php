@@ -35,6 +35,17 @@ function getFacilityCount($config) {
 $facilityCount = getFacilityCount($config);
 $hasData = ($facilityCount > 0);
 
+// CSVファイルの確認
+$csvFilePath = __DIR__ . '/AED設置場所_小山市オープンデータ_UTF-8_BOM無.csv';
+$csvExists = file_exists($csvFilePath);
+$csvInfo = null;
+if ($csvExists) {
+    $csvInfo = [
+        'size' => filesize($csvFilePath),
+        'modified' => date('Y-m-d H:i:s', filemtime($csvFilePath))
+    ];
+}
+
 // 処理実行部分（POST送信時）
 if (isset($_POST['init_type'])) {
     // CSRF対策
@@ -54,6 +65,8 @@ if (isset($_POST['init_type'])) {
         $success = updateDatabaseSchema($config);
     } elseif ($initType === 'full_reset') {
         $success = resetDatabaseWithSampleData($config);
+    } elseif ($initType === 'csv_import') {
+        $success = resetDatabaseWithCSVData($config);
     }
     
     // 処理結果に応じた完了メッセージ（この後に選択画面は表示されない）
@@ -75,6 +88,26 @@ if (isset($_POST['init_type'])) {
             echo "<p>処理内容: 全データ削除 + サンプルデータ投入</p>";
             echo "<p>施設データ: {$newFacilityCount} 件（新規）</p>";
             echo "<p>データベースを完全にリセットし、サンプルデータで初期化しました。</p>";
+        } elseif ($initType === 'csv_import') {
+            echo "<h3>✅ データベース初期化＆CSVインポート完了</h3>";
+            echo "<p>初期化日時: " . htmlspecialchars($currentTime) . "</p>";
+            echo "<p>処理内容: 全データ削除 + CSVファイルからインポート</p>";
+            echo "<p>施設データ: {$newFacilityCount} 件（新規）</p>";
+            echo "<p>データベースを完全にリセットし、CSVファイルからデータをインポートしました。</p>";
+            
+            // CSVインポート結果の詳細表示
+            if (isset($_SESSION['csv_import_results'])) {
+                $results = $_SESSION['csv_import_results'];
+                echo "<div style='margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 5px;'>";
+                echo "<p><strong>📊 インポート結果詳細:</strong></p>";
+                echo "<ul style='margin: 5px 0; padding-left: 20px;'>";
+                foreach ($results as $category => $count) {
+                    echo "<li>" . htmlspecialchars($category) . ": " . $count . " 件</li>";
+                }
+                echo "</ul>";
+                echo "</div>";
+                unset($_SESSION['csv_import_results']);
+            }
         }
         
         echo "<p>管理者パスワード: <strong>" . htmlspecialchars($config['admin']['password']) . "</strong></p>";
@@ -154,28 +187,121 @@ if ($hasData) {
     echo "</p>";
     echo "</div>";
     
+    // CSVインポートオプション
+    if ($csvExists) {
+        echo "<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>";
+        echo "<label style='display: block; cursor: pointer;'>";
+        echo "<input type='radio' name='init_type' value='csv_import' required style='margin-right: 10px;'>";
+        echo "<strong>全削除してCSVからインポート</strong>";
+        echo "</label>";
+        echo "<p style='margin: 10px 0 0 25px; color: #666; font-size: 0.9em;'>";
+        echo "全データを削除してCSVファイルからAED設置場所データをインポート<br>";
+        echo "本番データ投入時に使用";
+        echo "</p>";
+        echo "<div style='margin: 10px 0 0 25px; padding: 8px; background: #f8f9fa; border-radius: 3px; font-size: 0.8em;'>";
+        echo "<p style='margin: 0; color: #495057;'><strong>📄 CSVファイル情報:</strong></p>";
+        echo "<p style='margin: 2px 0; color: #6c757d;'>ファイル: AED設置場所_小山市オープンデータ_UTF-8_BOM無.csv</p>";
+        echo "<p style='margin: 2px 0; color: #6c757d;'>サイズ: " . number_format($csvInfo['size']) . " bytes</p>";
+        echo "<p style='margin: 2px 0; color: #6c757d;'>更新日時: " . $csvInfo['modified'] . "</p>";
+        echo "</div>";
+        echo "</div>";
+    } else {
+        echo "<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; opacity: 0.6;'>";
+        echo "<label style='display: block; cursor: not-allowed;'>";
+        echo "<input type='radio' name='init_type' value='csv_import' disabled style='margin-right: 10px;'>";
+        echo "<strong>全削除してCSVからインポート</strong> <span style='color: #dc3545; font-size: 0.9em;'>(CSVファイルが見つかりません)</span>";
+        echo "</label>";
+        echo "<p style='margin: 10px 0 0 25px; color: #666; font-size: 0.9em;'>";
+        echo "CSVファイル「AED設置場所_小山市オープンデータ_UTF-8_BOM無.csv」をルートディレクトリに配置してください";
+        echo "</p>";
+        echo "</div>";
+    }
+    
     echo "<input type='hidden' name='csrf_token' value='" . generateCSRFToken() . "'>";
     echo "<button type='submit' style='background: #0d6efd; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; margin-right: 10px;'>実行</button>";
     echo "<button type='button' onclick='history.back()' style='background: gray; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px;'>キャンセル</button>";
     echo "</form>";
     
 } else {
-    // データが存在しない場合：サンプルデータ投入のみ
+    // データが存在しない場合：サンプルデータ投入またはCSVインポート
     echo "<div style='color: blue; font-size: 1.2em; margin: 20px; padding: 20px; border: 2px solid blue;'>";
     echo "<h3>🚀 データベースの初期化を実行します</h3>";
-    echo "<p>以下の処理を実行します：</p>";
-    echo "<ul>";
-    echo "<li>テーブルの作成（facilities, facility_images, admin_settings）</li>";
-    echo "<li>サンプルデータの投入（3件の施設データ）</li>";
-    echo "</ul>";
-    echo "<p>この操作は元に戻すことができません。実行してもよろしいですか？</p>";
-    echo "<form method='POST' style='margin-top: 15px;'>";
-    echo "<input type='hidden' name='init_type' value='full_reset'>";
+    echo "<p>初期化方法を選択してください：</p>";
+    echo "</div>";
+    
+    echo "<form method='POST' style='margin: 20px;'>";
+    
+    // サンプルデータ初期化オプション
+    echo "<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>";
+    echo "<label style='display: block; cursor: pointer;'>";
+    echo "<input type='radio' name='init_type' value='full_reset' required style='margin-right: 10px;'>";
+    echo "<strong>サンプルデータで初期化</strong>";
+    echo "</label>";
+    echo "<p style='margin: 10px 0 0 25px; color: #666; font-size: 0.9em;'>";
+    echo "テーブル作成 + サンプルデータ投入（3件のAED設置場所データ）<br>";
+    echo "開発・テスト用に最適";
+    echo "</p>";
+    echo "</div>";
+    
+    // CSVインポートオプション
+    if ($csvExists) {
+        echo "<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px;'>";
+        echo "<label style='display: block; cursor: pointer;'>";
+        echo "<input type='radio' name='init_type' value='csv_import' required style='margin-right: 10px;'>";
+        echo "<strong>CSVファイルからインポート</strong>";
+        echo "</label>";
+        echo "<p style='margin: 10px 0 0 25px; color: #666; font-size: 0.9em;'>";
+        echo "テーブル作成 + CSVファイルからAED設置場所データをインポート<br>";
+        echo "本番データ投入に最適";
+        echo "</p>";
+        echo "<div style='margin: 10px 0 0 25px; padding: 8px; background: #f8f9fa; border-radius: 3px; font-size: 0.8em;'>";
+        echo "<p style='margin: 0; color: #495057;'><strong>📄 CSVファイル情報:</strong></p>";
+        echo "<p style='margin: 2px 0; color: #6c757d;'>ファイル: AED設置場所_小山市オープンデータ_UTF-8_BOM無.csv</p>";
+        echo "<p style='margin: 2px 0; color: #6c757d;'>サイズ: " . number_format($csvInfo['size']) . " bytes</p>";
+        echo "<p style='margin: 2px 0; color: #6c757d;'>更新日時: " . $csvInfo['modified'] . "</p>";
+        echo "</div>";
+        echo "</div>";
+    } else {
+        echo "<div style='margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; opacity: 0.6;'>";
+        echo "<label style='display: block; cursor: not-allowed;'>";
+        echo "<input type='radio' name='init_type' value='csv_import' disabled style='margin-right: 10px;'>";
+        echo "<strong>CSVファイルからインポート</strong> <span style='color: #dc3545; font-size: 0.9em;'>(CSVファイルが見つかりません)</span>";
+        echo "</label>";
+        echo "<p style='margin: 10px 0 0 25px; color: #666; font-size: 0.9em;'>";
+        echo "CSVファイル「AED設置場所_小山市オープンデータ_UTF-8_BOM無.csv」をルートディレクトリに配置してください";
+        echo "</p>";
+        echo "</div>";
+    }
+    
     echo "<input type='hidden' name='csrf_token' value='" . generateCSRFToken() . "'>";
-    echo "<button type='submit' style='background: blue; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; margin-right: 10px;'>初期化実行</button>";
+    echo "<button type='submit' style='background: #0d6efd; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; margin-right: 10px;'>初期化実行</button>";
     echo "<button type='button' onclick='history.back()' style='background: gray; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px;'>キャンセル</button>";
     echo "</form>";
-    echo "</div>";
+}
+
+// 自動カテゴリ分類関数
+function categorize_facility($facility_name) {
+    // 学校・教育機関
+    if (preg_match('/小学校|中学校|高等学校|義務教育学校|大学/', $facility_name)) {
+        return '学校・教育機関';
+    }
+    
+    // コンビニエンスストア
+    if (preg_match('/ファミリーマート|セブンイレブン|ミニストップ/', $facility_name)) {
+        return 'コンビニエンスストア';
+    }
+    
+    // 医療機関
+    if (preg_match('/歯科|医院|病院|クリニック/', $facility_name)) {
+        return '医療機関';
+    }
+    
+    // 公共施設
+    if (preg_match('/市役所|出張所|センター|図書館|博物館|保育所|児童センター/', $facility_name)) {
+        return '公共施設';
+    }
+    
+    return 'その他';
 }
 
 // 設定ファイル構造検証機能
@@ -402,21 +528,216 @@ function resetDatabaseWithSampleData($config) {
     $facilities = $config['sample_data'];
     
     foreach ($facilities as $facility) {
-        $stmt = $db->prepare('INSERT INTO facilities (name, lat, lng, address, description, phone, website, business_hours, sns_account, category) VALUES (:name, :lat, :lng, :address, :description, :phone, :website, :business_hours, :sns_account, :category)');
+        $stmt = $db->prepare('INSERT INTO facilities (
+            csv_no, name, name_kana, lat, lng, address, address_detail, 
+            installation_position, phone, phone_extension, corporate_number, 
+            organization_name, available_days, start_time, end_time, 
+            available_hours_note, pediatric_support, website, note, category
+        ) VALUES (
+            :csv_no, :name, :name_kana, :lat, :lng, :address, :address_detail,
+            :installation_position, :phone, :phone_extension, :corporate_number,
+            :organization_name, :available_days, :start_time, :end_time,
+            :available_hours_note, :pediatric_support, :website, :note, :category
+        )');
+        
+        $stmt->bindValue(':csv_no', $facility['csv_no'] ?? '', SQLITE3_TEXT);
         $stmt->bindValue(':name', $facility['name'], SQLITE3_TEXT);
+        $stmt->bindValue(':name_kana', $facility['name_kana'] ?? '', SQLITE3_TEXT);
         $stmt->bindValue(':lat', $facility['lat'], SQLITE3_FLOAT);
         $stmt->bindValue(':lng', $facility['lng'], SQLITE3_FLOAT);
         $stmt->bindValue(':address', $facility['address'], SQLITE3_TEXT);
-        $stmt->bindValue(':description', $facility['description'], SQLITE3_TEXT);
+        $stmt->bindValue(':address_detail', $facility['address_detail'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':installation_position', $facility['installation_position'] ?? '', SQLITE3_TEXT);
         $stmt->bindValue(':phone', $facility['phone'], SQLITE3_TEXT);
-        $stmt->bindValue(':website', $facility['website'], SQLITE3_TEXT);
-        $stmt->bindValue(':business_hours', $facility['business_hours'], SQLITE3_TEXT);
-        $stmt->bindValue(':sns_account', $facility['sns_account'], SQLITE3_TEXT);
+        $stmt->bindValue(':phone_extension', $facility['phone_extension'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':corporate_number', $facility['corporate_number'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':organization_name', $facility['organization_name'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':available_days', $facility['available_days'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':start_time', $facility['start_time'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':end_time', $facility['end_time'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':available_hours_note', $facility['available_hours_note'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':pediatric_support', $facility['pediatric_support'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':website', $facility['website'] ?? '', SQLITE3_TEXT);
+        $stmt->bindValue(':note', $facility['note'] ?? '', SQLITE3_TEXT);
         $stmt->bindValue(':category', $facility['category'], SQLITE3_TEXT);
         $stmt->execute();
     }
     
     $db->close();
+    return true;
+}
+
+// 全削除初期化関数（CSVインポート）
+function resetDatabaseWithCSVData($config) {
+    try {
+        // 設定ファイルの検証
+        validateConfig($config);
+        
+        // CSVファイルの確認
+        $csvFilePath = __DIR__ . '/AED設置場所_小山市オープンデータ_UTF-8_BOM無.csv';
+        if (!file_exists($csvFilePath)) {
+            throw new Exception("CSVファイルが見つかりません: " . $csvFilePath);
+        }
+        
+        // ファイルが読み取り可能かチェック
+        if (!is_readable($csvFilePath)) {
+            throw new Exception("CSVファイルが読み取り不可能です: " . $csvFilePath);
+        }
+    } catch (Exception $e) {
+        error_log("CSV Import Error: " . $e->getMessage());
+        return false;
+    }
+    
+    $db = new SQLite3($config['database']['path']);
+    
+    // テーブルを削除（設定ファイルベース）
+    dropAllTables($config, $db);
+    
+    // 既存の画像ファイルも削除
+    $imageDir = __DIR__ . '/' . $config['storage']['images_dir'] . '/';
+    if (is_dir($imageDir)) {
+        $files = glob($imageDir . '*');
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+    
+    // テーブル再作成（設定ファイルから）
+    $tables = array_keys($config['database']['tables']);
+    foreach ($tables as $tableName) {
+        $tableSQL = getTableSchema($config, $tableName);
+        $db->exec($tableSQL);
+        
+        // インデックスも作成
+        createTableIndexes($config, $tableName, $db);
+    }
+    
+    // CSVファイルの読み込みとデータインポート
+    $csvData = [];
+    $categoryCount = [];
+    $lineNumber = 0;
+    $importedCount = 0;
+    
+    // CSVファイルを開く
+    if (($handle = fopen($csvFilePath, "r")) !== FALSE) {
+        // 最初の行（ヘッダー）をスキップ
+        if (($header = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            $lineNumber++;
+        }
+        
+        // データ行を読み込み
+        while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+            $lineNumber++;
+            
+            // データが22項目未満の場合はスキップ（備考まで含む）
+            if (count($data) < 22) {
+                error_log("CSV Import Warning: Insufficient data columns at line " . $lineNumber . " (expected 22, got " . count($data) . ")");
+                continue;
+            }
+            
+            // CSVデータのマッピング
+            $csvNo = trim($data[1]);           // NO
+            $name = trim($data[4]);            // 名称
+            $nameKana = trim($data[5]);        // 名称_カナ
+            $address = trim($data[6]);         // 住所
+            $addressDetail = trim($data[7]);   // 方書
+            $lat = floatval($data[8]);         // 緯度
+            $lng = floatval($data[9]);         // 経度
+            $installationPosition = trim($data[10]); // 設置位置
+            $phone = trim($data[11]);          // 電話番号
+            $phoneExtension = trim($data[12]); // 内線番号
+            $corporateNumber = trim($data[13]); // 法人番号
+            $organizationName = trim($data[14]); // 団体名
+            $availableDays = trim($data[15]);  // 利用可能曜日
+            $startTime = trim($data[16]);      // 開始時間
+            $endTime = trim($data[17]);        // 終了時間
+            $availableHoursNote = trim($data[18]); // 利用可能日時特記事項
+            $pediatricSupport = trim($data[19]); // 小児対応設備の有無
+            $website = trim($data[20]);        // URL
+            $note = isset($data[21]) ? trim($data[21]) : '';           // 備考
+            
+            // 基本データの検証
+            if (empty($name) || $lat == 0 || $lng == 0) {
+                error_log("CSV Import Warning: Invalid data at line " . $lineNumber . " - name: '$name', lat: $lat, lng: $lng");
+                continue;
+            }
+            
+            // 緯度・経度の範囲チェック（日本の範囲内）
+            if ($lat < 24 || $lat > 46 || $lng < 123 || $lng > 146) {
+                error_log("CSV Import Warning: Invalid coordinates at line " . $lineNumber . " - lat: $lat, lng: $lng");
+                continue;
+            }
+            
+            // 自動カテゴリ分類
+            $category = categorize_facility($name);
+            
+            // カテゴリ別件数をカウント
+            if (!isset($categoryCount[$category])) {
+                $categoryCount[$category] = 0;
+            }
+            $categoryCount[$category]++;
+            
+            // データベースに挿入
+            $stmt = $db->prepare('INSERT INTO facilities (
+                csv_no, name, name_kana, lat, lng, address, address_detail, 
+                installation_position, phone, phone_extension, corporate_number, 
+                organization_name, available_days, start_time, end_time, 
+                available_hours_note, pediatric_support, website, note, category
+            ) VALUES (
+                :csv_no, :name, :name_kana, :lat, :lng, :address, :address_detail,
+                :installation_position, :phone, :phone_extension, :corporate_number,
+                :organization_name, :available_days, :start_time, :end_time,
+                :available_hours_note, :pediatric_support, :website, :note, :category
+            )');
+            
+            $stmt->bindValue(':csv_no', $csvNo, SQLITE3_TEXT);
+            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':name_kana', $nameKana, SQLITE3_TEXT);
+            $stmt->bindValue(':lat', $lat, SQLITE3_FLOAT);
+            $stmt->bindValue(':lng', $lng, SQLITE3_FLOAT);
+            $stmt->bindValue(':address', $address, SQLITE3_TEXT);
+            $stmt->bindValue(':address_detail', $addressDetail, SQLITE3_TEXT);
+            $stmt->bindValue(':installation_position', $installationPosition, SQLITE3_TEXT);
+            $stmt->bindValue(':phone', $phone, SQLITE3_TEXT);
+            $stmt->bindValue(':phone_extension', $phoneExtension, SQLITE3_TEXT);
+            $stmt->bindValue(':corporate_number', $corporateNumber, SQLITE3_TEXT);
+            $stmt->bindValue(':organization_name', $organizationName, SQLITE3_TEXT);
+            $stmt->bindValue(':available_days', $availableDays, SQLITE3_TEXT);
+            $stmt->bindValue(':start_time', $startTime, SQLITE3_TEXT);
+            $stmt->bindValue(':end_time', $endTime, SQLITE3_TEXT);
+            $stmt->bindValue(':available_hours_note', $availableHoursNote, SQLITE3_TEXT);
+            $stmt->bindValue(':pediatric_support', $pediatricSupport, SQLITE3_TEXT);
+            $stmt->bindValue(':website', $website, SQLITE3_TEXT);
+            $stmt->bindValue(':note', $note, SQLITE3_TEXT);
+            $stmt->bindValue(':category', $category, SQLITE3_TEXT);
+            
+            if ($stmt->execute()) {
+                $importedCount++;
+            } else {
+                error_log("Failed to insert facility: " . $name . " (Line: " . $lineNumber . ") - " . $db->lastErrorMsg());
+            }
+        }
+        
+        fclose($handle);
+    } else {
+        error_log("Cannot open CSV file: " . $csvFilePath);
+        $db->close();
+        return false;
+    }
+    
+    $db->close();
+    
+    // インポート結果をセッションに保存
+    $_SESSION['csv_import_results'] = $categoryCount;
+    
+    // 最低限のデータがインポートされたかチェック
+    if ($importedCount < 1) {
+        error_log("CSV Import Error: No valid data imported");
+        return false;
+    }
+    
     return true;
 }
 
