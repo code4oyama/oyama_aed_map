@@ -20,24 +20,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         $message = 'セキュリティエラーが発生しました。再度お試しください。';
         $messageType = 'error';
     } else {
-    $name = mb_substr($_POST['name'], 0, 50);
-    $address = mb_substr($_POST['address'] ?? '', 0, 50);
-    $description = $_POST['description'] ?? '';
+    $name = mb_substr($_POST['name'], 0, 100);
+    $name_kana = mb_substr($_POST['name_kana'] ?? '', 0, 100);
+    $address = mb_substr($_POST['address'] ?? '', 0, 200);
+    $address_detail = mb_substr($_POST['address_detail'] ?? '', 0, 200);
+    $installation_position = mb_substr($_POST['installation_position'] ?? '', 0, 200);
     $phone = mb_substr($_POST['phone'] ?? '', 0, 50);
-    $website = mb_substr($_POST['website'] ?? '', 0, 50);
-    $business_hours = mb_substr($_POST['business_hours'] ?? '', 0, 50);
-    $sns_account = mb_substr($_POST['sns_account'] ?? '', 0, 50);
+    $phone_extension = mb_substr($_POST['phone_extension'] ?? '', 0, 20);
+    $corporate_number = mb_substr($_POST['corporate_number'] ?? '', 0, 50);
+    $organization_name = mb_substr($_POST['organization_name'] ?? '', 0, 100);
+    $available_days = mb_substr($_POST['available_days'] ?? '', 0, 50);
+    $start_time = mb_substr($_POST['start_time'] ?? '', 0, 10);
+    $end_time = mb_substr($_POST['end_time'] ?? '', 0, 10);
+    $available_hours_note = mb_substr($_POST['available_hours_note'] ?? '', 0, 500);
+    $pediatric_support = $_POST['pediatric_support'] ?? '';
+    $website = mb_substr($_POST['website'] ?? '', 0, 200);
+    $note = mb_substr($_POST['note'] ?? '', 0, 1000);
     $category = $_POST['category'] ?? '';
-    $review = $_POST['review'] ?? '';
     $lat = floatval($_POST['lat']);
     $lng = floatval($_POST['lng']);
     
-    // 説明の文字数チェック
-    if (mb_strlen($description) > 2000) {
-        $message = "{$config['app']['field_labels']['description']}は2000文字以内で入力してください";
-        $messageType = 'error';
-    } elseif (mb_strlen($review) > 2000) {
-        $message = "{$config['app']['field_labels']['review']}は2000文字以内で入力してください";
+    // 文字数チェック
+    if (mb_strlen($note) > 1000) {
+        $message = "{$config['app']['field_labels']['note']}は1000文字以内で入力してください";
         $messageType = 'error';
     } else {
     
@@ -56,18 +61,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         } else {
             // 施設を登録（日本時間でupdated_atを設定）
             $japanTime = date('Y-m-d H:i:s', time());
-            $stmt = $db->prepare('INSERT INTO facilities (name, lat, lng, address, description, phone, website, business_hours, sns_account, category, review, updated_at) VALUES (:name, :lat, :lng, :address, :description, :phone, :website, :business_hours, :sns_account, :category, :review, :updated_at)');
+            $stmt = $db->prepare('INSERT INTO facilities (name, name_kana, lat, lng, address, address_detail, installation_position, phone, phone_extension, corporate_number, organization_name, available_days, start_time, end_time, available_hours_note, pediatric_support, website, note, category, updated_at) VALUES (:name, :name_kana, :lat, :lng, :address, :address_detail, :installation_position, :phone, :phone_extension, :corporate_number, :organization_name, :available_days, :start_time, :end_time, :available_hours_note, :pediatric_support, :website, :note, :category, :updated_at)');
             $stmt->bindValue(':name', $name, SQLITE3_TEXT);
+            $stmt->bindValue(':name_kana', $name_kana, SQLITE3_TEXT);
             $stmt->bindValue(':lat', $lat, SQLITE3_FLOAT);
             $stmt->bindValue(':lng', $lng, SQLITE3_FLOAT);
             $stmt->bindValue(':address', $address, SQLITE3_TEXT);
-            $stmt->bindValue(':description', $description, SQLITE3_TEXT);
+            $stmt->bindValue(':address_detail', $address_detail, SQLITE3_TEXT);
+            $stmt->bindValue(':installation_position', $installation_position, SQLITE3_TEXT);
             $stmt->bindValue(':phone', $phone, SQLITE3_TEXT);
+            $stmt->bindValue(':phone_extension', $phone_extension, SQLITE3_TEXT);
+            $stmt->bindValue(':corporate_number', $corporate_number, SQLITE3_TEXT);
+            $stmt->bindValue(':organization_name', $organization_name, SQLITE3_TEXT);
+            $stmt->bindValue(':available_days', $available_days, SQLITE3_TEXT);
+            $stmt->bindValue(':start_time', $start_time, SQLITE3_TEXT);
+            $stmt->bindValue(':end_time', $end_time, SQLITE3_TEXT);
+            $stmt->bindValue(':available_hours_note', $available_hours_note, SQLITE3_TEXT);
+            $stmt->bindValue(':pediatric_support', $pediatric_support, SQLITE3_TEXT);
             $stmt->bindValue(':website', $website, SQLITE3_TEXT);
-            $stmt->bindValue(':business_hours', $business_hours, SQLITE3_TEXT);
-            $stmt->bindValue(':sns_account', $sns_account, SQLITE3_TEXT);
+            $stmt->bindValue(':note', $note, SQLITE3_TEXT);
             $stmt->bindValue(':category', $category, SQLITE3_TEXT);
-            $stmt->bindValue(':review', $review, SQLITE3_TEXT);
             $stmt->bindValue(':updated_at', $japanTime, SQLITE3_TEXT);
             $result = $stmt->execute();
             
@@ -130,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         $message = '必要な項目が入力されていません';
         $messageType = 'error';
     }
-    } // レビュー文字数チェックのelse文終了
+    } // ノート文字数チェックのelse文終了
     } // CSRF対策のelse文終了
 }
 ?>
@@ -174,6 +187,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
                 </div>
                 
                 <div class="form-group">
+                    <label for="name_kana"><?= htmlspecialchars($config['app']['field_labels']['name_kana']) ?></label>
+                    <input type="text" id="name_kana" name="name_kana" value="<?= htmlspecialchars($_POST['name_kana'] ?? '') ?>">
+                </div>
+                
+                <div class="form-group">
                     <label for="category"><?= htmlspecialchars($config['app']['field_labels']['category']) ?> *</label>
                     <select id="category" name="category" required>
                         <option value="">カテゴリーを選択してください</option>
@@ -190,16 +208,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
                 </div>
                 
                 <div class="form-group">
-                    <label for="description"><?= htmlspecialchars($config['app']['field_labels']['description']) ?>（最大2000文字）</label>
-                    <textarea id="description" name="description" rows="3" maxlength="2000" placeholder="施設の簡単な説明を入力してください"><?= htmlspecialchars($_POST['description'] ?? '') ?></textarea>
-                    <div style="font-size:0.8em; color:#666; text-align:right; margin-top:0.3em;">
-                        <span id="descriptionCount">0</span>/2000文字
-                    </div>
+                    <label for="address_detail"><?= htmlspecialchars($config['app']['field_labels']['address_detail']) ?></label>
+                    <input type="text" id="address_detail" name="address_detail" value="<?= htmlspecialchars($_POST['address_detail'] ?? '') ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label for="installation_position"><?= htmlspecialchars($config['app']['field_labels']['installation_position']) ?></label>
+                    <input type="text" id="installation_position" name="installation_position" value="<?= htmlspecialchars($_POST['installation_position'] ?? '') ?>">
                 </div>
                 
                 <div class="form-group">
                     <label for="phone"><?= htmlspecialchars($config['app']['field_labels']['phone']) ?></label>
-                    <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="03-1234-5678">
+                    <input type="tel" id="phone" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="(0285)23-1111">
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone_extension"><?= htmlspecialchars($config['app']['field_labels']['phone_extension']) ?></label>
+                    <input type="text" id="phone_extension" name="phone_extension" value="<?= htmlspecialchars($_POST['phone_extension'] ?? '') ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label for="organization_name"><?= htmlspecialchars($config['app']['field_labels']['organization_name']) ?></label>
+                    <input type="text" id="organization_name" name="organization_name" value="<?= htmlspecialchars($_POST['organization_name'] ?? '') ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label for="available_days"><?= htmlspecialchars($config['app']['field_labels']['available_days']) ?></label>
+                    <input type="text" id="available_days" name="available_days" value="<?= htmlspecialchars($_POST['available_days'] ?? '') ?>" placeholder="月火水木金">
+                </div>
+                
+                <div class="form-group">
+                    <label for="start_time"><?= htmlspecialchars($config['app']['field_labels']['start_time']) ?></label>
+                    <input type="time" id="start_time" name="start_time" value="<?= htmlspecialchars($_POST['start_time'] ?? '') ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label for="end_time"><?= htmlspecialchars($config['app']['field_labels']['end_time']) ?></label>
+                    <input type="time" id="end_time" name="end_time" value="<?= htmlspecialchars($_POST['end_time'] ?? '') ?>">
+                </div>
+                
+                <div class="form-group">
+                    <label for="available_hours_note"><?= htmlspecialchars($config['app']['field_labels']['available_hours_note']) ?></label>
+                    <textarea id="available_hours_note" name="available_hours_note" rows="2" maxlength="500" placeholder="祝日、年末年始を除く。"><?= htmlspecialchars($_POST['available_hours_note'] ?? '') ?></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pediatric_support"><?= htmlspecialchars($config['app']['field_labels']['pediatric_support']) ?></label>
+                    <select id="pediatric_support" name="pediatric_support">
+                        <option value="">選択してください</option>
+                        <option value="有" <?= (($_POST['pediatric_support'] ?? '') === '有') ? 'selected' : '' ?>>有</option>
+                        <option value="無" <?= (($_POST['pediatric_support'] ?? '') === '無') ? 'selected' : '' ?>>無</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -208,20 +267,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
                 </div>
                 
                 <div class="form-group">
-                    <label for="business_hours"><?= htmlspecialchars($config['app']['field_labels']['business_hours']) ?></label>
-                    <input type="text" id="business_hours" name="business_hours" value="<?= htmlspecialchars($_POST['business_hours'] ?? '') ?>" placeholder="11:00-21:00">
-                </div>
-                
-                <div class="form-group">
-                    <label for="sns_account"><?= htmlspecialchars($config['app']['field_labels']['sns_account']) ?></label>
-                    <input type="text" id="sns_account" name="sns_account" value="<?= htmlspecialchars($_POST['sns_account'] ?? '') ?>" placeholder="@example_account">
-                </div>
-                
-                <div class="form-group">
-                    <label for="review"><?= htmlspecialchars($config['app']['field_labels']['review']) ?>（最大2000文字）</label>
-                    <textarea id="review" name="review" rows="5" maxlength="2000" placeholder="<?= htmlspecialchars($config['app']['facility_name']) ?>の特徴、雰囲気、おすすめメニューなどを詳しく記入してください..."><?= htmlspecialchars($_POST['review'] ?? '') ?></textarea>
+                    <label for="note"><?= htmlspecialchars($config['app']['field_labels']['note']) ?>（最大1000文字）</label>
+                    <textarea id="note" name="note" rows="5" maxlength="1000" placeholder="備考情報や注意事項などを記入してください..."><?= htmlspecialchars($_POST['note'] ?? '') ?></textarea>
                     <div style="font-size:0.8em; color:#666; text-align:right; margin-top:0.3em;">
-                        <span id="reviewCount">0</span>/2000文字
+                        <span id="noteCount">0</span>/1000文字
                     </div>
                 </div>
                 
@@ -332,27 +381,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
             }
         };
         
-        // 説明文字数カウント
-        document.getElementById('description').addEventListener('input', function() {
+        // ノート文字数カウント
+        document.getElementById('note').addEventListener('input', function() {
             const count = this.value.length;
-            document.getElementById('descriptionCount').textContent = count;
+            document.getElementById('noteCount').textContent = count;
             
-            if (count > 2000) {
-                document.getElementById('descriptionCount').style.color = 'red';
+            if (count > 1000) {
+                document.getElementById('noteCount').style.color = 'red';
             } else {
-                document.getElementById('descriptionCount').style.color = '#666';
-            }
-        });
-        
-        // レビュー文字数カウント
-        document.getElementById('review').addEventListener('input', function() {
-            const count = this.value.length;
-            document.getElementById('reviewCount').textContent = count;
-            
-            if (count > 2000) {
-                document.getElementById('reviewCount').style.color = 'red';
-            } else {
-                document.getElementById('reviewCount').style.color = '#666';
+                document.getElementById('noteCount').style.color = '#666';
             }
         });
         
@@ -393,14 +430,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
         
         // 初期表示時の文字数カウント
         window.onload = function() {
-            const description = document.getElementById('description');
-            if (description.value) {
-                document.getElementById('descriptionCount').textContent = description.value.length;
-            }
-            
-            const review = document.getElementById('review');
-            if (review.value) {
-                document.getElementById('reviewCount').textContent = review.value.length;
+            const note = document.getElementById('note');
+            if (note.value) {
+                document.getElementById('noteCount').textContent = note.value.length;
             }
         };
     </script>

@@ -58,13 +58,14 @@ $res = $db->query('SELECT * FROM facilities ORDER BY id DESC');
                 <th class="col-id">ID</th>
                 <th class="col-name"><?= htmlspecialchars($config['app']['field_labels']['name']) ?></th>
                 <th class="col-category"><?= htmlspecialchars($config['app']['field_labels']['category']) ?></th>
-                <th class="col-description"><?= htmlspecialchars($config['app']['field_labels']['description']) ?></th>
                 <th class="col-address"><?= htmlspecialchars($config['app']['field_labels']['address']) ?></th>
+                <th class="col-installation"><?= htmlspecialchars($config['app']['field_labels']['installation_position']) ?></th>
                 <th class="col-phone"><?= htmlspecialchars($config['app']['field_labels']['phone']) ?></th>
-                <th class="col-hours"><?= htmlspecialchars($config['app']['field_labels']['business_hours']) ?></th>
+                <th class="col-hours"><?= htmlspecialchars($config['app']['field_labels']['available_days']) ?></th>
+                <th class="col-time">利用時間</th>
+                <th class="col-pediatric"><?= htmlspecialchars($config['app']['field_labels']['pediatric_support']) ?></th>
                 <th class="col-website"><?= htmlspecialchars($config['app']['field_labels']['website']) ?></th>
-                <th class="col-sns"><?= htmlspecialchars($config['app']['field_labels']['sns_account']) ?></th>
-                <th class="col-review"><?= htmlspecialchars($config['app']['field_labels']['review']) ?></th>
+                <th class="col-note"><?= htmlspecialchars($config['app']['field_labels']['note']) ?></th>
                 <th class="col-updated">更新日時</th>
                 <th class="col-images"><?= htmlspecialchars($config['app']['field_labels']['images']) ?></th>
                 <th class="col-actions">操作</th>
@@ -80,16 +81,16 @@ $res = $db->query('SELECT * FROM facilities ORDER BY id DESC');
                     <span style="color:#999;">なし</span>
                 <?php endif; ?>
             </td>
-            <td class="col-description">
-                <?php if (!empty($row['description'])): ?>
-                    <?= htmlspecialchars(mb_strlen($row['description']) > 50 ? mb_substr($row['description'], 0, 50) . '...' : $row['description']) ?>
+            <td class="col-address">
+                <?php if (!empty($row['address'])): ?>
+                    <?= htmlspecialchars($row['address']) ?>
                 <?php else: ?>
                     <span style="color:#999;">なし</span>
                 <?php endif; ?>
             </td>
-            <td class="col-address">
-                <?php if (!empty($row['address'])): ?>
-                    <?= htmlspecialchars($row['address']) ?>
+            <td class="col-installation">
+                <?php if (!empty($row['installation_position'])): ?>
+                    <?= htmlspecialchars($row['installation_position']) ?>
                 <?php else: ?>
                     <span style="color:#999;">なし</span>
                 <?php endif; ?>
@@ -104,8 +105,31 @@ $res = $db->query('SELECT * FROM facilities ORDER BY id DESC');
                 <?php endif; ?>
             </td>
             <td class="col-hours">
-                <?php if (!empty($row['business_hours'])): ?>
-                    <?= htmlspecialchars($row['business_hours']) ?>
+                <?php if (!empty($row['available_days'])): ?>
+                    <?= htmlspecialchars($row['available_days']) ?>
+                <?php else: ?>
+                    <span style="color:#999;">なし</span>
+                <?php endif; ?>
+            </td>
+            <td class="col-time">
+                <?php 
+                $time_info = [];
+                if (!empty($row['start_time'])) $time_info[] = $row['start_time'];
+                if (!empty($row['end_time'])) $time_info[] = $row['end_time'];
+                if (!empty($time_info)): ?>
+                    <?= htmlspecialchars(implode('-', $time_info)) ?>
+                    <?php if (!empty($row['available_hours_note'])): ?>
+                        <br><small style="color:#666;"><?= htmlspecialchars($row['available_hours_note']) ?></small>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <span style="color:#999;">なし</span>
+                <?php endif; ?>
+            </td>
+            <td class="col-pediatric">
+                <?php if (!empty($row['pediatric_support'])): ?>
+                    <span style="color:<?= $row['pediatric_support'] === '有' ? '#28a745' : '#dc3545' ?>; font-weight:bold;">
+                        <?= htmlspecialchars($row['pediatric_support']) ?>
+                    </span>
                 <?php else: ?>
                     <span style="color:#999;">なし</span>
                 <?php endif; ?>
@@ -119,16 +143,9 @@ $res = $db->query('SELECT * FROM facilities ORDER BY id DESC');
                     <span style="color:#999;">なし</span>
                 <?php endif; ?>
             </td>
-            <td class="col-sns">
-                <?php if (!empty($row['sns_account'])): ?>
-                    <?= htmlspecialchars($row['sns_account']) ?>
-                <?php else: ?>
-                    <span style="color:#999;">なし</span>
-                <?php endif; ?>
-            </td>
-            <td class="col-review">
-                <?php if (!empty($row['review'])): ?>
-                    <?= htmlspecialchars(mb_strlen($row['review']) > 50 ? mb_substr($row['review'], 0, 50) . '...' : $row['review']) ?>
+            <td class="col-note">
+                <?php if (!empty($row['note'])): ?>
+                    <?= htmlspecialchars(mb_strlen($row['note']) > 30 ? mb_substr($row['note'], 0, 30) . '...' : $row['note']) ?>
                 <?php else: ?>
                     <span style="color:#999;">なし</span>
                 <?php endif; ?>
