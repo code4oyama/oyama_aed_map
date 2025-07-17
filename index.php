@@ -146,14 +146,14 @@ $appName = $config['app']['name'];
               popupContent += `<br><span style="background:${categoryColor}; color:#fff; padding:0.2em 0.5em; border-radius:3px; font-size:0.8em;">${facility.category}</span>`;
             }
             
-            // 説明があれば表示
-            if (facility.description && facility.description.trim() !== '') {
-              popupContent += `<br><i>${facility.description}</i>`;
-            }
-            
             // 住所があれば表示
             if (facility.address && facility.address.trim() !== '') {
               popupContent += `<br>📍 ${facility.address}`;
+            }
+            
+            // 設置位置があれば表示
+            if (facility.installation_position && facility.installation_position.trim() !== '') {
+              popupContent += `<br>📍 設置位置: ${facility.installation_position}`;
             }
             
             // 電話番号があれば表示
@@ -161,9 +161,33 @@ $appName = $config['app']['name'];
               popupContent += `<br>📞 <a href="tel:${facility.phone}">${facility.phone}</a>`;
             }
             
-            // 営業時間があれば表示
-            if (facility.business_hours && facility.business_hours.trim() !== '') {
-              popupContent += `<br>⏰ ${facility.business_hours}`;
+            // 利用可能曜日があれば表示
+            if (facility.available_days && facility.available_days.trim() !== '') {
+              popupContent += `<br>📅 利用可能曜日: ${facility.available_days}`;
+            }
+            
+            // 利用時間があれば表示
+            if (facility.start_time || facility.end_time) {
+              let timeInfo = '⏰ 利用時間: ';
+              if (facility.start_time && facility.end_time) {
+                timeInfo += `${facility.start_time} - ${facility.end_time}`;
+              } else if (facility.start_time) {
+                timeInfo += `${facility.start_time}から`;
+              } else if (facility.end_time) {
+                timeInfo += `${facility.end_time}まで`;
+              }
+              popupContent += `<br>${timeInfo}`;
+            }
+            
+            // 利用可能時間備考があれば表示
+            if (facility.available_hours_note && facility.available_hours_note.trim() !== '') {
+              popupContent += `<br><small style="color:#666;">※ ${facility.available_hours_note}</small>`;
+            }
+            
+            // 小児対応設備があれば表示
+            if (facility.pediatric_support && facility.pediatric_support.trim() !== '') {
+              const supportColor = facility.pediatric_support === '有' ? '#28a745' : '#dc3545';
+              popupContent += `<br>👶 小児対応: <span style="color:${supportColor}; font-weight:bold;">${facility.pediatric_support}</span>`;
             }
             
             // ウェブサイトがあれば表示
@@ -171,29 +195,15 @@ $appName = $config['app']['name'];
               popupContent += `<br>🌐 <a href="${facility.website}" target="_blank">ウェブサイト</a>`;
             }
             
-            // SNSアカウントがあれば表示
-            if (facility.sns_account && facility.sns_account.trim() !== '') {
-              const snsAccount = facility.sns_account.trim();
-              
-              // 完全URLまたは@形式のみリンクとして処理
-              if (snsAccount.startsWith('http')) {
-                // 完全URL
-                popupContent += `<br>📱 <a href="${snsAccount}" target="_blank">${facility.sns_account}</a>`;
-              } else if (snsAccount.startsWith('@')) {
-                // Twitter @形式
-                const username = snsAccount.substring(1);
-                const snsLink = `https://twitter.com/${username}`;
-                popupContent += `<br>📱 <a href="${snsLink}" target="_blank">${facility.sns_account}</a>`;
-              } else {
-                // その他はリンクなしで表示
-                popupContent += `<br>📱 ${facility.sns_account}`;
-              }
+            // 団体名があれば表示
+            if (facility.organization_name && facility.organization_name.trim() !== '') {
+              popupContent += `<br>🏢 ${facility.organization_name}`;
             }
             
-            // レビューがあれば表示
-            if (facility.review && facility.review.trim() !== '') {
-              const reviewText = facility.review.length > 150 ? facility.review.substring(0, 150) + '...' : facility.review;
-              popupContent += `<br><div style="margin-top:0.5em; padding:0.5em; background:#f8f9fa; border-radius:3px; font-size:0.9em;">${reviewText.replace(/\n/g, '<br>')}</div>`;
+            // 備考があれば表示
+            if (facility.note && facility.note.trim() !== '') {
+              const noteText = facility.note.length > 100 ? facility.note.substring(0, 100) + '...' : facility.note;
+              popupContent += `<br><div style="margin-top:0.5em; padding:0.5em; background:#f8f9fa; border-radius:3px; font-size:0.9em;">${noteText.replace(/\n/g, '<br>')}</div>`;
             }
             
             // 画像があれば表示

@@ -73,23 +73,105 @@ while ($imageRow = $imageRes->fetchArray(SQLITE3_ASSOC)) {
                 </div>
             </div>
             
+            <?php if (!empty(trim($facility['name_kana']))): ?>
             <div class="form-group">
-                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['description']) ?></span>
-                <div class="readonly-field <?= empty(trim($facility['description'])) ? 'empty' : '' ?>">
-                    <?= !empty(trim($facility['description'])) ? nl2br(htmlspecialchars($facility['description'])) : htmlspecialchars($config['app']['field_labels']['description']) . 'がありません' ?>
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['name_kana']) ?></span>
+                <div class="readonly-field">
+                    <?= htmlspecialchars($facility['name_kana']) ?>
                 </div>
             </div>
+            <?php endif; ?>
+            
+            <?php if (!empty(trim($facility['address_detail']))): ?>
+            <div class="form-group">
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['address_detail']) ?></span>
+                <div class="readonly-field">
+                    <?= htmlspecialchars($facility['address_detail']) ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty(trim($facility['installation_position']))): ?>
+            <div class="form-group">
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['installation_position']) ?></span>
+                <div class="readonly-field" style="background: #e8f4f8; border: 1px solid #b8daff; padding: 1em; border-radius: 6px; margin-bottom: 0.5em;">
+                    <?= htmlspecialchars($facility['installation_position']) ?>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <div class="form-group">
                 <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['phone']) ?></span>
                 <div class="readonly-field <?= empty(trim($facility['phone'])) ? 'empty' : '' ?>">
                     <?php if (!empty(trim($facility['phone']))): ?>
                         <a href="tel:<?= htmlspecialchars($facility['phone']) ?>"><?= htmlspecialchars($facility['phone']) ?></a>
+                        <?php if (!empty(trim($facility['phone_extension']))): ?>
+                            <span style="color:#666;">(内線: <?= htmlspecialchars($facility['phone_extension']) ?>)</span>
+                        <?php endif; ?>
                     <?php else: ?>
                         <?= htmlspecialchars($config['app']['field_labels']['phone']) ?>がありません
                     <?php endif; ?>
                 </div>
             </div>
+            
+            <?php if (!empty(trim($facility['organization_name']))): ?>
+            <div class="form-group">
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['organization_name']) ?></span>
+                <div class="readonly-field">
+                    <?= htmlspecialchars($facility['organization_name']) ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty(trim($facility['available_days']))): ?>
+            <div class="form-group">
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['available_days']) ?></span>
+                <div class="readonly-field">
+                    <?= htmlspecialchars($facility['available_days']) ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty(trim($facility['start_time'])) || !empty(trim($facility['end_time']))): ?>
+            <div class="form-group">
+                <span class="field-label">利用時間</span>
+                <div class="readonly-field">
+                    <?php
+                    if (!empty(trim($facility['start_time'])) && !empty(trim($facility['end_time']))) {
+                        echo htmlspecialchars($facility['start_time']) . ' - ' . htmlspecialchars($facility['end_time']);
+                    } elseif (!empty(trim($facility['start_time']))) {
+                        echo htmlspecialchars($facility['start_time']) . 'から';
+                    } elseif (!empty(trim($facility['end_time']))) {
+                        echo htmlspecialchars($facility['end_time']) . 'まで';
+                    }
+                    ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty(trim($facility['available_hours_note']))): ?>
+            <div class="form-group">
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['available_hours_note']) ?></span>
+                <div class="readonly-field" style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 1em; border-radius: 6px; margin-bottom: 0.5em;">
+                    <?= nl2br(htmlspecialchars($facility['available_hours_note'])) ?>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty(trim($facility['pediatric_support']))): ?>
+            <div class="form-group">
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['pediatric_support']) ?></span>
+                <div class="readonly-field">
+                    <?php
+                    $supportColor = $facility['pediatric_support'] === '有' ? '#28a745' : '#dc3545';
+                    $supportBg = $facility['pediatric_support'] === '有' ? '#d4edda' : '#f8d7da';
+                    ?>
+                    <span style="color:<?= $supportColor ?>; background:<?= $supportBg ?>; padding:0.3em 0.6em; border-radius:4px; font-weight:bold;">
+                        <?= htmlspecialchars($facility['pediatric_support']) ?>
+                    </span>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <div class="form-group">
                 <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['website']) ?></span>
@@ -102,45 +184,11 @@ while ($imageRow = $imageRes->fetchArray(SQLITE3_ASSOC)) {
                 </div>
             </div>
             
+            <?php if (!empty(trim($facility['note']))): ?>
             <div class="form-group">
-                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['business_hours']) ?></span>
-                <div class="readonly-field <?= empty(trim($facility['business_hours'])) ? 'empty' : '' ?>">
-                    <?= !empty(trim($facility['business_hours'])) ? htmlspecialchars($facility['business_hours']) : htmlspecialchars($config['app']['field_labels']['business_hours']) . '情報がありません' ?>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['sns_account']) ?></span>
-                <div class="readonly-field <?= empty(trim($facility['sns_account'])) ? 'empty' : '' ?>">
-                    <?php if (!empty(trim($facility['sns_account']))): ?>
-                        <?php
-                        $snsAccount = trim($facility['sns_account']);
-                        
-                        // 完全URLまたは@形式のみリンクとして処理
-                        if (strpos($snsAccount, 'http') === 0) {
-                            // 完全URL
-                            echo '<a href="' . htmlspecialchars($snsAccount) . '" target="_blank">' . htmlspecialchars($snsAccount) . '</a>';
-                        } elseif (strpos($snsAccount, '@') === 0) {
-                            // Twitter @形式
-                            $username = substr($snsAccount, 1);
-                            $snsLink = "https://twitter.com/{$username}";
-                            echo '<a href="' . htmlspecialchars($snsLink) . '" target="_blank">' . htmlspecialchars($snsAccount) . '</a>';
-                        } else {
-                            // その他はリンクなしで表示
-                            echo htmlspecialchars($snsAccount);
-                        }
-                        ?>
-                    <?php else: ?>
-                        <?= htmlspecialchars($config['app']['field_labels']['sns_account']) ?>がありません
-                    <?php endif; ?>
-                </div>
-            </div>
-            
-            <?php if (!empty(trim($facility['review']))): ?>
-            <div class="form-group">
-                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['review']) ?></span>
-                <div class="review-section">
-                    <?= nl2br(htmlspecialchars($facility['review'])) ?>
+                <span class="field-label"><?= htmlspecialchars($config['app']['field_labels']['note']) ?></span>
+                <div class="readonly-field" style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 1em; border-radius: 6px; margin-bottom: 0.5em;">
+                    <?= nl2br(htmlspecialchars($facility['note'])) ?>
                 </div>
             </div>
             <?php endif; ?>
