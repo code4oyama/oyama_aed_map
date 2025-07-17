@@ -2,6 +2,18 @@
 // 管理者用施設編集画面
 require_once 'auth_check.php';
 
+// 時刻をHTML time input用にフォーマットする関数
+function formatTimeForInput($time) {
+    if (empty($time)) return '';
+    // 既に HH:MM 形式の場合はそのまま返す
+    if (preg_match('/^\d{2}:\d{2}$/', $time)) return $time;
+    // H:MM 形式を HH:MM 形式に変換
+    if (preg_match('/^(\d{1,2}):(\d{2})$/', $time, $matches)) {
+        return sprintf('%02d:%02d', intval($matches[1]), intval($matches[2]));
+    }
+    return $time;
+}
+
 // 認証チェック
 checkAuth();
 
@@ -320,12 +332,12 @@ if (isset($_GET['delete_image'])) {
                 
                 <div class="form-group">
                     <label for="start_time"><?= htmlspecialchars($config['app']['field_labels']['start_time']) ?></label>
-                    <input type="time" id="start_time" name="start_time" value="<?= htmlspecialchars($facility['start_time'] ?? '') ?>">
+                    <input type="time" id="start_time" name="start_time" value="<?= htmlspecialchars(formatTimeForInput($facility['start_time'] ?? '')) ?>">
                 </div>
                 
                 <div class="form-group">
                     <label for="end_time"><?= htmlspecialchars($config['app']['field_labels']['end_time']) ?></label>
-                    <input type="time" id="end_time" name="end_time" value="<?= htmlspecialchars($facility['end_time'] ?? '') ?>">
+                    <input type="time" id="end_time" name="end_time" value="<?= htmlspecialchars(formatTimeForInput($facility['end_time'] ?? '')) ?>">
                 </div>
                 
                 <div class="form-group">

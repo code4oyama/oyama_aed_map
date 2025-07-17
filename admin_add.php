@@ -2,6 +2,18 @@
 // 管理者用施設登録画面
 require_once 'auth_check.php';
 
+// 時刻をHTML time input用にフォーマットする関数
+function formatTimeForInput($time) {
+    if (empty($time)) return '';
+    // 既に HH:MM 形式の場合はそのまま返す
+    if (preg_match('/^\d{2}:\d{2}$/', $time)) return $time;
+    // H:MM 形式を HH:MM 形式に変換
+    if (preg_match('/^(\d{1,2}):(\d{2})$/', $time, $matches)) {
+        return sprintf('%02d:%02d', intval($matches[1]), intval($matches[2]));
+    }
+    return $time;
+}
+
 // 認証チェック
 checkAuth();
 
@@ -239,12 +251,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
                 
                 <div class="form-group">
                     <label for="start_time"><?= htmlspecialchars($config['app']['field_labels']['start_time']) ?></label>
-                    <input type="time" id="start_time" name="start_time" value="<?= htmlspecialchars($_POST['start_time'] ?? '') ?>">
+                    <input type="time" id="start_time" name="start_time" value="<?= htmlspecialchars(formatTimeForInput($_POST['start_time'] ?? '08:00')) ?>">
                 </div>
                 
                 <div class="form-group">
                     <label for="end_time"><?= htmlspecialchars($config['app']['field_labels']['end_time']) ?></label>
-                    <input type="time" id="end_time" name="end_time" value="<?= htmlspecialchars($_POST['end_time'] ?? '') ?>">
+                    <input type="time" id="end_time" name="end_time" value="<?= htmlspecialchars(formatTimeForInput($_POST['end_time'] ?? '18:00')) ?>">
                 </div>
                 
                 <div class="form-group">
