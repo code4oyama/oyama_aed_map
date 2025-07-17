@@ -205,13 +205,6 @@ while ($imageRow = $imageRes->fetchArray(SQLITE3_ASSOC)) {
                 </div>
             </div>
             <?php endif; ?>
-            
-            <div class="form-group">
-                <span class="field-label">最終更新日時</span>
-                <div class="readonly-field">
-                    <?= htmlspecialchars($facility['updated_at']) ?>
-                </div>
-            </div>
         </div>
         
         <div class="map-section">

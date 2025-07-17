@@ -16,7 +16,7 @@ $appName = $config['app']['name'];
 </head>
 <body>
     <div class="header">
-        <h1><?= htmlspecialchars($appName) ?></h1>
+        <h1><?= htmlspecialchars($appName) ?> <span style="font-size: 0.5em; color: #666;">最終更新日:2025/3/19</span></h1>
         <div>
             <button id="filterBtn"><?= htmlspecialchars($config['app']['field_labels']['category']) ?>選択</button>
             <button id="locateBtn">現在位置に移動</button>
