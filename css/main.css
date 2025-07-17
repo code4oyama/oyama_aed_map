@@ -24,7 +24,7 @@
     background: #e0a000 !important;
 }
 
-/* 店舗詳細ページ専用スタイル */
+/* 施設詳細ページ専用スタイル */
 .facility-detail-container {
     display: grid;
     grid-template-columns: 1fr 1fr;

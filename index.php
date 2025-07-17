@@ -292,14 +292,14 @@ $appName = $config['app']['name'];
         }
       });
       
-      // 選択されたカテゴリーの店舗のみをフィルター
+      // 選択されたカテゴリーの施設のみをフィルター
       const lastCategory = <?= json_encode(end($config['app']['categories'])) ?>;
       const filteredFacilities = allFacilities.filter(facility => {
         return selectedCategories.includes(facility.category) || 
                (!facility.category && selectedCategories.includes(lastCategory));
       });
       
-      // フィルターされた店舗を表示
+      // フィルターされた施設を表示
       displayFacilities(filteredFacilities);
     }
     

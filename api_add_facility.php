@@ -46,17 +46,26 @@ if ($row['cnt'] > 0) {
 
 // 日本時間でupdated_atを設定
 $japanTime = date('Y-m-d H:i:s', time());
-$stmt = $db->prepare('INSERT INTO facilities (name, lat, lng, address, description, phone, website, business_hours, sns_account, review, updated_at) VALUES (:name, :lat, :lng, :address, :description, :phone, :website, :business_hours, :sns_account, :review, :updated_at)');
+$stmt = $db->prepare('INSERT INTO facilities (name, name_kana, lat, lng, address, address_detail, installation_position, phone, phone_extension, corporate_number, organization_name, available_days, start_time, end_time, available_hours_note, pediatric_support, website, note, category, updated_at) VALUES (:name, :name_kana, :lat, :lng, :address, :address_detail, :installation_position, :phone, :phone_extension, :corporate_number, :organization_name, :available_days, :start_time, :end_time, :available_hours_note, :pediatric_support, :website, :note, :category, :updated_at)');
 $stmt->bindValue(':name', $data['name'], SQLITE3_TEXT);
+$stmt->bindValue(':name_kana', $data['name_kana'] ?? '', SQLITE3_TEXT);
 $stmt->bindValue(':lat', $data['lat'], SQLITE3_FLOAT);
 $stmt->bindValue(':lng', $data['lng'], SQLITE3_FLOAT);
 $stmt->bindValue(':address', $data['address'] ?? '', SQLITE3_TEXT);
-$stmt->bindValue(':description', $data['description'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':address_detail', $data['address_detail'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':installation_position', $data['installation_position'] ?? '', SQLITE3_TEXT);
 $stmt->bindValue(':phone', $data['phone'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':phone_extension', $data['phone_extension'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':corporate_number', $data['corporate_number'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':organization_name', $data['organization_name'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':available_days', $data['available_days'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':start_time', $data['start_time'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':end_time', $data['end_time'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':available_hours_note', $data['available_hours_note'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':pediatric_support', $data['pediatric_support'] ?? '', SQLITE3_TEXT);
 $stmt->bindValue(':website', $data['website'] ?? '', SQLITE3_TEXT);
-$stmt->bindValue(':business_hours', $data['business_hours'] ?? '', SQLITE3_TEXT);
-$stmt->bindValue(':sns_account', $data['sns_account'] ?? '', SQLITE3_TEXT);
-$stmt->bindValue(':review', $data['review'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':note', $data['note'] ?? '', SQLITE3_TEXT);
+$stmt->bindValue(':category', $data['category'] ?? '', SQLITE3_TEXT);
 $stmt->bindValue(':updated_at', $japanTime, SQLITE3_TEXT);
 $result = $stmt->execute();
 

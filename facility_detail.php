@@ -233,7 +233,7 @@ while ($imageRow = $imageRes->fetchArray(SQLITE3_ASSOC)) {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
         
-        // 店舗位置マーカー
+        // 施設位置マーカー
         const icon = L.icon({
             iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
             iconSize: [25, 41],
