@@ -96,15 +96,14 @@ function saveFacilityData($db, $data, $config, $facilityId = null) {
     $japanTime = date('Y-m-d H:i:s', time());
     
     if ($facilityId) {
-        // 更新
-        $stmt = $db->prepare('UPDATE facilities SET csv_no = :csv_no, name = :name, name_kana = :name_kana, lat = :lat, lng = :lng, address = :address, address_detail = :address_detail, installation_position = :installation_position, phone = :phone, phone_extension = :phone_extension, corporate_number = :corporate_number, organization_name = :organization_name, available_days = :available_days, start_time = :start_time, end_time = :end_time, available_hours_note = :available_hours_note, pediatric_support = :pediatric_support, website = :website, note = :note, category = :category, updated_at = :updated_at WHERE id = :id');
+        // 更新（csv_noは更新しない - 元のコードと同じ動作）
+        $stmt = $db->prepare('UPDATE facilities SET name = :name, name_kana = :name_kana, lat = :lat, lng = :lng, address = :address, address_detail = :address_detail, installation_position = :installation_position, phone = :phone, phone_extension = :phone_extension, corporate_number = :corporate_number, organization_name = :organization_name, available_days = :available_days, start_time = :start_time, end_time = :end_time, available_hours_note = :available_hours_note, pediatric_support = :pediatric_support, website = :website, note = :note, category = :category, updated_at = :updated_at WHERE id = :id');
     } else {
-        // 新規作成
-        $stmt = $db->prepare('INSERT INTO facilities (csv_no, name, name_kana, lat, lng, address, address_detail, installation_position, phone, phone_extension, corporate_number, organization_name, available_days, start_time, end_time, available_hours_note, pediatric_support, website, note, category, updated_at) VALUES (:csv_no, :name, :name_kana, :lat, :lng, :address, :address_detail, :installation_position, :phone, :phone_extension, :corporate_number, :organization_name, :available_days, :start_time, :end_time, :available_hours_note, :pediatric_support, :website, :note, :category, :updated_at)');
+        // 新規作成（csv_noは空で作成）
+        $stmt = $db->prepare('INSERT INTO facilities (name, name_kana, lat, lng, address, address_detail, installation_position, phone, phone_extension, corporate_number, organization_name, available_days, start_time, end_time, available_hours_note, pediatric_support, website, note, category, updated_at) VALUES (:name, :name_kana, :lat, :lng, :address, :address_detail, :installation_position, :phone, :phone_extension, :corporate_number, :organization_name, :available_days, :start_time, :end_time, :available_hours_note, :pediatric_support, :website, :note, :category, :updated_at)');
     }
     
     // データバインディング
-    $stmt->bindValue(':csv_no', $data['csv_no'], SQLITE3_TEXT);
     $stmt->bindValue(':name', $data['name'], SQLITE3_TEXT);
     $stmt->bindValue(':name_kana', $data['name_kana'], SQLITE3_TEXT);
     $stmt->bindValue(':lat', $data['lat'], SQLITE3_FLOAT);
@@ -131,6 +130,14 @@ function saveFacilityData($db, $data, $config, $facilityId = null) {
     }
     
     $result = $stmt->execute();
+    
+    // デバッグ情報を追加
+    if (!$result) {
+        $errorInfo = $db->lastErrorMsg();
+        error_log("SQL Error in saveFacilityData: " . $errorInfo);
+        error_log("Data: " . print_r($data, true));
+        error_log("Facility ID: " . ($facilityId ?? 'null'));
+    }
     
     if ($result) {
         if ($facilityId) {
@@ -312,6 +319,9 @@ function processFacilityForm($facilityId = null) {
     
     // 施設データ保存
     $savedFacilityId = saveFacilityData($db, $data, $config, $facilityId);
+    error_log("saveFacilityData result: " . ($savedFacilityId ? $savedFacilityId : 'false'));
+    error_log("Original facilityId: " . ($facilityId ?? 'null'));
+    
     if (!$savedFacilityId) {
         return [
             'success' => false,
