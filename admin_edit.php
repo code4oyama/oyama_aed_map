@@ -179,10 +179,18 @@ if (isset($_GET['delete_image'])) {
                 
                 <div class="form-group">
                     <label for="pediatric_support"><?= htmlspecialchars($config['app']['field_labels']['pediatric_support']) ?></label>
+                    
+                    <?php
+                    // 値を正規化：null、空文字、空白を「無」に変換
+                    $pediatric_value = trim($facility['pediatric_support'] ?? '');
+                    if ($pediatric_value === '' || $pediatric_value === null) {
+                        $pediatric_value = '無';
+                    }
+                    ?>
+                    
                     <select id="pediatric_support" name="pediatric_support">
-                        <option value="">選択してください</option>
-                        <option value="有" <?= (($facility['pediatric_support'] ?? '') === '有') ? 'selected' : '' ?>>有</option>
-                        <option value="無" <?= (($facility['pediatric_support'] ?? '') === '無') ? 'selected' : '' ?>>無</option>
+                        <option value="有" <?= ($pediatric_value === '有') ? 'selected' : '' ?>>有</option>
+                        <option value="無" <?= ($pediatric_value === '無') ? 'selected' : '' ?>>無</option>
                     </select>
                 </div>
                 

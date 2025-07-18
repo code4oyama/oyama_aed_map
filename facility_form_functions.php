@@ -5,6 +5,7 @@
 // auth_check.phpの関数を使用
 require_once 'auth_check.php';
 
+
 // 時刻をHTML time input用にフォーマットする関数
 function formatTimeForInput($time) {
     if (empty($time)) return '';
@@ -34,7 +35,7 @@ function extractFacilityDataFromPost() {
         'start_time' => mb_substr($_POST['start_time'] ?? '', 0, 10),
         'end_time' => mb_substr($_POST['end_time'] ?? '', 0, 10),
         'available_hours_note' => mb_substr($_POST['available_hours_note'] ?? '', 0, 500),
-        'pediatric_support' => $_POST['pediatric_support'] ?? '',
+        'pediatric_support' => empty($_POST['pediatric_support']) ? '無' : $_POST['pediatric_support'],
         'website' => mb_substr($_POST['website'] ?? '', 0, 200),
         'note' => mb_substr($_POST['note'] ?? '', 0, 1000),
         'category' => $_POST['category'] ?? '',
@@ -43,26 +44,20 @@ function extractFacilityDataFromPost() {
     ];
 }
 
-// 施設データの基本検証
+// 施設データの基本検証（元のコードの条件を完全に再現）
 function validateFacilityData($data, $config) {
     $errors = [];
     
-    // 必須項目チェック
-    if (empty($data['name'])) {
-        $errors[] = "{$config['app']['field_labels']['name']}は必須です";
-    }
     
-    if (!$data['lat'] || !$data['lng']) {
-        $errors[] = "位置情報は必須です";
-    }
-    
-    if (empty($data['category'])) {
-        $errors[] = "{$config['app']['field_labels']['category']}は必須です";
-    }
-    
-    // 文字数チェック
+    // 文字数チェック（元のコードでは最初に実行）
     if (mb_strlen($data['note']) > 1000) {
         $errors[] = "{$config['app']['field_labels']['note']}は1000文字以内で入力してください";
+        return $errors; // 元のコードと同じく、ここで終了
+    }
+    
+    // 元のコードと完全に同じ条件: !empty($name) && $lat && $lng && !empty($category)
+    if (empty($data['name']) || !$data['lat'] || !$data['lng'] || empty($data['category'])) {
+        $errors[] = "必要な項目が入力されていません";
     }
     
     return $errors;
@@ -70,6 +65,7 @@ function validateFacilityData($data, $config) {
 
 // 施設名の重複チェック
 function checkFacilityNameDuplicate($db, $name, $config, $excludeId = null) {
+    
     if ($excludeId) {
         // 編集時：自分以外で同じ名前があるかチェック
         $stmt = $db->prepare('SELECT COUNT(*) as cnt FROM facilities WHERE name = :name AND id != :id');
@@ -84,8 +80,10 @@ function checkFacilityNameDuplicate($db, $name, $config, $excludeId = null) {
     $res = $stmt->execute();
     $row = $res->fetchArray(SQLITE3_ASSOC);
     
+    
     if ($row['cnt'] > 0) {
-        return "同じ名前の{$config['app']['facility_name']}が既に登録されています";
+        $errorMsg = "同じ名前の{$config['app']['facility_name']}が既に登録されています";
+        return $errorMsg;
     }
     
     return null;
@@ -95,12 +93,26 @@ function checkFacilityNameDuplicate($db, $name, $config, $excludeId = null) {
 function saveFacilityData($db, $data, $config, $facilityId = null) {
     $japanTime = date('Y-m-d H:i:s', time());
     
+    
+    // SQLiteデータベースロック対策
+    $db->busyTimeout(30000); // 30秒のタイムアウト
+    $db->exec('PRAGMA journal_mode = WAL;'); // WALモードでロック問題を軽減
+    
     if ($facilityId) {
         // 更新（csv_noは更新しない - 元のコードと同じ動作）
-        $stmt = $db->prepare('UPDATE facilities SET name = :name, name_kana = :name_kana, lat = :lat, lng = :lng, address = :address, address_detail = :address_detail, installation_position = :installation_position, phone = :phone, phone_extension = :phone_extension, corporate_number = :corporate_number, organization_name = :organization_name, available_days = :available_days, start_time = :start_time, end_time = :end_time, available_hours_note = :available_hours_note, pediatric_support = :pediatric_support, website = :website, note = :note, category = :category, updated_at = :updated_at WHERE id = :id');
+        $sql = 'UPDATE facilities SET name = :name, name_kana = :name_kana, lat = :lat, lng = :lng, address = :address, address_detail = :address_detail, installation_position = :installation_position, phone = :phone, phone_extension = :phone_extension, corporate_number = :corporate_number, organization_name = :organization_name, available_days = :available_days, start_time = :start_time, end_time = :end_time, available_hours_note = :available_hours_note, pediatric_support = :pediatric_support, website = :website, note = :note, category = :category, updated_at = :updated_at WHERE id = :id';
+        $stmt = $db->prepare($sql);
     } else {
         // 新規作成（csv_noは空で作成）
-        $stmt = $db->prepare('INSERT INTO facilities (name, name_kana, lat, lng, address, address_detail, installation_position, phone, phone_extension, corporate_number, organization_name, available_days, start_time, end_time, available_hours_note, pediatric_support, website, note, category, updated_at) VALUES (:name, :name_kana, :lat, :lng, :address, :address_detail, :installation_position, :phone, :phone_extension, :corporate_number, :organization_name, :available_days, :start_time, :end_time, :available_hours_note, :pediatric_support, :website, :note, :category, :updated_at)');
+        $sql = 'INSERT INTO facilities (name, name_kana, lat, lng, address, address_detail, installation_position, phone, phone_extension, corporate_number, organization_name, available_days, start_time, end_time, available_hours_note, pediatric_support, website, note, category, updated_at) VALUES (:name, :name_kana, :lat, :lng, :address, :address_detail, :installation_position, :phone, :phone_extension, :corporate_number, :organization_name, :available_days, :start_time, :end_time, :available_hours_note, :pediatric_support, :website, :note, :category, :updated_at)';
+        $stmt = $db->prepare($sql);
+    }
+    
+    // prepare()が失敗していないかチェック
+    if (!$stmt) {
+        $errorInfo = $db->lastErrorMsg();
+        $errorCode = $db->lastErrorCode();
+        return false;
     }
     
     // データバインディング
@@ -131,13 +143,6 @@ function saveFacilityData($db, $data, $config, $facilityId = null) {
     
     $result = $stmt->execute();
     
-    // デバッグ情報を追加
-    if (!$result) {
-        $errorInfo = $db->lastErrorMsg();
-        error_log("SQL Error in saveFacilityData: " . $errorInfo);
-        error_log("Data: " . print_r($data, true));
-        error_log("Facility ID: " . ($facilityId ?? 'null'));
-    }
     
     if ($result) {
         if ($facilityId) {
@@ -283,6 +288,7 @@ function processFacilityForm($facilityId = null) {
     $message = '';
     $messageType = '';
     
+    
     // CSRF対策
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
         return [
@@ -319,8 +325,6 @@ function processFacilityForm($facilityId = null) {
     
     // 施設データ保存
     $savedFacilityId = saveFacilityData($db, $data, $config, $facilityId);
-    error_log("saveFacilityData result: " . ($savedFacilityId ? $savedFacilityId : 'false'));
-    error_log("Original facilityId: " . ($facilityId ?? 'null'));
     
     if (!$savedFacilityId) {
         return [
