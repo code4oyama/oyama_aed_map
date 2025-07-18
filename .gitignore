@@ -11,3 +11,5 @@ facility_images/
 .github/
 CLAUDE.md
 cookies.txt
+facilities.db-shm
+facilities.db-wal

@@ -97,7 +97,13 @@ function verifyCSRFToken($token) {
 // データベース接続取得
 function getDatabase() {
     global $config;
-    return new SQLite3($config['database']['path']);
+    $db = new SQLite3($config['database']['path']);
+    
+    // ロック対策
+    $db->busyTimeout(30000); // 30秒のタイムアウト
+    $db->exec('PRAGMA journal_mode = WAL;'); // WALモードでロック問題を軽減
+    
+    return $db;
 }
 
 // パスワード更新関数

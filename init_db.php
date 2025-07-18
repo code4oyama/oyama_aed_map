@@ -12,7 +12,7 @@ $config = getConfig();
 // シンプルな初期化チェック関数
 function getFacilityCount($config) {
     try {
-        $db = new SQLite3($config['database']['path']);
+        $db = getDatabase();
         
         // テーブルの存在確認
         $tableCheck = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='facilities'");
@@ -479,9 +479,9 @@ function validateUploadedCSVFile($config) {
 
 // 自動カテゴリ分類関数
 function categorize_facility($facility_name) {
-    // 学校・教育機関
-    if (preg_match('/小学校|中学校|高等学校|義務教育学校|大学/', $facility_name)) {
-        return '学校・教育機関';
+    // 民間企業
+    if (preg_match('/会社|㈱/', $facility_name)) {
+        return 'その他';
     }
     
     // コンビニエンスストア
@@ -495,8 +495,13 @@ function categorize_facility($facility_name) {
     }
     
     // 公共施設
-    if (preg_match('/市役所|出張所|センター|図書館|博物館|保育所|児童センター/', $facility_name)) {
+    if (preg_match('/市役所|小山市|庁舎|出張所|図書館|博物館|資料館|公園|保育所|センター/', $facility_name)) {
         return '公共施設';
+    }
+    
+    // 学校・教育機関
+    if (preg_match('/小学校|中学校|高等学校|義務教育学校|大学/', $facility_name)) {
+        return '学校・教育機関';
     }
     
     return 'その他';
@@ -620,7 +625,7 @@ function updateDatabaseSchema($config) {
     // 設定ファイルの検証
     validateFullConfig($config);
     
-    $db = new SQLite3($config['database']['path']);
+    $db = getDatabase();
     
     // 設定からテーブル構造を取得してテーブル作成
     $facilitiesTableSQL = getTableSchema($config, 'facilities');
@@ -696,7 +701,7 @@ function resetDatabaseWithSampleData($config) {
     // 設定ファイルの検証
     validateFullConfig($config);
     
-    $db = new SQLite3($config['database']['path']);
+    $db = getDatabase();
     
     // テーブルを削除（設定ファイルベース）
     dropAllTables($config, $db);
@@ -755,7 +760,7 @@ function resetDatabaseWithCSVData($config) {
         return false;
     }
     
-    $db = new SQLite3($config['database']['path']);
+    $db = getDatabase();
     
     // テーブルを削除（設定ファイルベース）
     dropAllTables($config, $db);
