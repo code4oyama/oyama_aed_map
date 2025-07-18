@@ -142,6 +142,48 @@ return [
         'database_file' => 'facilities.db'
     ],
     
+    // CSVインポート設定
+    'csv_import' => [
+        'encoding' => 'UTF-8',
+        'has_header' => true,
+        'max_file_size' => 10 * 1024 * 1024, // 10MB
+        'allowed_extensions' => ['csv'],
+        'allowed_mime_types' => ['text/csv', 'text/plain', 'application/csv'],
+        'field_mapping' => [
+            // フィールド名 => CSV列番号（0ベース）
+            'csv_no' => 1,
+            'name' => 4,
+            'name_kana' => 5,
+            'address' => 6,
+            'address_detail' => 7,
+            'lat' => 8,
+            'lng' => 9,
+            'installation_position' => 10,
+            'phone' => 11,
+            'phone_extension' => 12,
+            'corporate_number' => 13,
+            'organization_name' => 14,
+            'available_days' => 15,
+            'start_time' => 16,
+            'end_time' => 17,
+            'available_hours_note' => 18,
+            'pediatric_support' => 19,
+            'website' => 20,
+            'note' => 21
+        ],
+        'required_fields' => ['name', 'lat', 'lng'],
+        'default_values' => [
+            'pediatric_support' => '無'
+        ],
+        'validation' => [
+            'lat_min' => 24,
+            'lat_max' => 46,
+            'lng_min' => 123,
+            'lng_max' => 146,
+            'expected_columns' => 22
+        ]
+    ],
+    
     // サンプルデータ設定
     'sample_data' => [
         [
