@@ -1,18 +1,7 @@
 <?php
 // 管理者用施設編集画面
 require_once 'auth_check.php';
-
-// 時刻をHTML time input用にフォーマットする関数
-function formatTimeForInput($time) {
-    if (empty($time)) return '';
-    // 既に HH:MM 形式の場合はそのまま返す
-    if (preg_match('/^\d{2}:\d{2}$/', $time)) return $time;
-    // H:MM 形式を HH:MM 形式に変換
-    if (preg_match('/^(\d{1,2}):(\d{2})$/', $time, $matches)) {
-        return sprintf('%02d:%02d', intval($matches[1]), intval($matches[2]));
-    }
-    return $time;
-}
+require_once 'facility_form_functions.php';
 
 // 認証チェック
 checkAuth();
@@ -48,194 +37,37 @@ if (!$facility) {
 }
 
 // 既存画像の取得
-$stmt = $db->prepare('SELECT id, filename, original_name FROM facility_images WHERE facility_id = :facility_id ORDER BY id');
-$stmt->bindValue(':facility_id', $facilityId, SQLITE3_INTEGER);
-$res = $stmt->execute();
-while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
-    $images[] = $row;
-}
+$images = getFacilityImages($db, $facilityId);
 
 // 更新処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
-    // CSRF対策
-    if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
-        $message = 'セキュリティエラーが発生しました。再度お試しください。';
-        $messageType = 'error';
-    } else {
-        $name = mb_substr($_POST['name'], 0, 100);
-        $name_kana = mb_substr($_POST['name_kana'] ?? '', 0, 100);
-        $address = mb_substr($_POST['address'] ?? '', 0, 200);
-        $address_detail = mb_substr($_POST['address_detail'] ?? '', 0, 200);
-        $installation_position = mb_substr($_POST['installation_position'] ?? '', 0, 200);
-        $phone = mb_substr($_POST['phone'] ?? '', 0, 50);
-        $phone_extension = mb_substr($_POST['phone_extension'] ?? '', 0, 20);
-        $corporate_number = mb_substr($_POST['corporate_number'] ?? '', 0, 50);
-        $organization_name = mb_substr($_POST['organization_name'] ?? '', 0, 100);
-        $available_days = mb_substr($_POST['available_days'] ?? '', 0, 50);
-        $start_time = mb_substr($_POST['start_time'] ?? '', 0, 10);
-        $end_time = mb_substr($_POST['end_time'] ?? '', 0, 10);
-        $available_hours_note = mb_substr($_POST['available_hours_note'] ?? '', 0, 500);
-        $pediatric_support = $_POST['pediatric_support'] ?? '';
-        $website = mb_substr($_POST['website'] ?? '', 0, 200);
-        $note = mb_substr($_POST['note'] ?? '', 0, 1000);
-        $category = $_POST['category'] ?? '';
-        $lat = floatval($_POST['lat']);
-        $lng = floatval($_POST['lng']);
+    $result = processFacilityForm($facilityId);
+    $message = $result['message'];
+    $messageType = $result['messageType'];
+    
+    // 成功時はデータを再取得
+    if ($result['success']) {
+        // 更新後のデータを再取得
+        $stmt = $db->prepare('SELECT * FROM facilities WHERE id = :id');
+        $stmt->bindValue(':id', $facilityId, SQLITE3_INTEGER);
+        $res = $stmt->execute();
+        $facility = $res->fetchArray(SQLITE3_ASSOC);
         
-        // 文字数チェック
-        if (mb_strlen($note) > 1000) {
-            $message = "{$config['app']['field_labels']['note']}は1000文字以内で入力してください";
-            $messageType = 'error';
-        } else {
-        
-        if (!empty($name) && $lat && $lng && !empty($category)) {
-            // 同じ名前の施設が既に存在するかチェック（自分以外）
-            $stmt = $db->prepare('SELECT COUNT(*) as cnt FROM facilities WHERE name = :name AND id != :id');
-            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-            $stmt->bindValue(':id', $facilityId, SQLITE3_INTEGER);
-            $res = $stmt->execute();
-            $row = $res->fetchArray(SQLITE3_ASSOC);
-            
-            if ($row['cnt'] > 0) {
-                $message = "同じ名前の{$config['app']['facility_name']}が既に登録されています";
-                $messageType = 'error';
-            } else {
-                // 施設情報を更新（日本時間でupdated_atを設定）
-                $japanTime = date('Y-m-d H:i:s', time());
-                $stmt = $db->prepare('UPDATE facilities SET name = :name, name_kana = :name_kana, lat = :lat, lng = :lng, address = :address, address_detail = :address_detail, installation_position = :installation_position, phone = :phone, phone_extension = :phone_extension, corporate_number = :corporate_number, organization_name = :organization_name, available_days = :available_days, start_time = :start_time, end_time = :end_time, available_hours_note = :available_hours_note, pediatric_support = :pediatric_support, website = :website, note = :note, category = :category, updated_at = :updated_at WHERE id = :id');
-                $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-                $stmt->bindValue(':name_kana', $name_kana, SQLITE3_TEXT);
-                $stmt->bindValue(':lat', $lat, SQLITE3_FLOAT);
-                $stmt->bindValue(':lng', $lng, SQLITE3_FLOAT);
-                $stmt->bindValue(':address', $address, SQLITE3_TEXT);
-                $stmt->bindValue(':address_detail', $address_detail, SQLITE3_TEXT);
-                $stmt->bindValue(':installation_position', $installation_position, SQLITE3_TEXT);
-                $stmt->bindValue(':phone', $phone, SQLITE3_TEXT);
-                $stmt->bindValue(':phone_extension', $phone_extension, SQLITE3_TEXT);
-                $stmt->bindValue(':corporate_number', $corporate_number, SQLITE3_TEXT);
-                $stmt->bindValue(':organization_name', $organization_name, SQLITE3_TEXT);
-                $stmt->bindValue(':available_days', $available_days, SQLITE3_TEXT);
-                $stmt->bindValue(':start_time', $start_time, SQLITE3_TEXT);
-                $stmt->bindValue(':end_time', $end_time, SQLITE3_TEXT);
-                $stmt->bindValue(':available_hours_note', $available_hours_note, SQLITE3_TEXT);
-                $stmt->bindValue(':pediatric_support', $pediatric_support, SQLITE3_TEXT);
-                $stmt->bindValue(':website', $website, SQLITE3_TEXT);
-                $stmt->bindValue(':note', $note, SQLITE3_TEXT);
-                $stmt->bindValue(':category', $category, SQLITE3_TEXT);
-                $stmt->bindValue(':updated_at', $japanTime, SQLITE3_TEXT);
-                $stmt->bindValue(':id', $facilityId, SQLITE3_INTEGER);
-                $result = $stmt->execute();
-                
-                if ($result) {
-                    // 新しい画像の処理
-                    if (isset($_FILES['new_images']) && $_FILES['new_images']['error'][0] !== UPLOAD_ERR_NO_FILE) {
-                        $uploadDir = __DIR__ . '/' . $config['storage']['images_dir'] . '/';
-                        if (!is_dir($uploadDir)) {
-                            mkdir($uploadDir, 0777, true);
-                        }
-                        
-                        $files = $_FILES['new_images'];
-                        $fileCount = count($files['name']);
-                        
-                        // 既存画像数と合わせて10枚以下かチェック
-                        $currentImageCount = count($images);
-                        if (($currentImageCount + $fileCount) <= 10) {
-                            for ($i = 0; $i < $fileCount; $i++) {
-                                if ($files['error'][$i] === UPLOAD_ERR_OK) {
-                                    $fileName = $files['name'][$i];
-                                    $fileTmpName = $files['tmp_name'][$i];
-                                    $fileSize = $files['size'][$i];
-                                    
-                                    // ファイルサイズチェック（5MB）
-                                    if ($fileSize <= 5 * 1024 * 1024) {
-                                        // ファイル形式チェック
-                                        $imageInfo = getimagesize($fileTmpName);
-                                        if ($imageInfo !== false) {
-                                            // ファイル名生成（重複防止）
-                                            $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                                            $newFileName = $facilityId . '_' . uniqid() . '.' . $extension;
-                                            $filePath = $uploadDir . $newFileName;
-                                            
-                                            if (move_uploaded_file($fileTmpName, $filePath)) {
-                                                // データベースに画像情報を保存
-                                                $stmt = $db->prepare('INSERT INTO facility_images (facility_id, filename, original_name) VALUES (:facility_id, :filename, :original_name)');
-                                                $stmt->bindValue(':facility_id', $facilityId, SQLITE3_INTEGER);
-                                                $stmt->bindValue(':filename', $newFileName, SQLITE3_TEXT);
-                                                $stmt->bindValue(':original_name', $fileName, SQLITE3_TEXT);
-                                                $stmt->execute();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            $message = "{$config['app']['field_labels']['images']}は合計で最大10枚まで登録可能です";
-                            $messageType = 'error';
-                        }
-                    }
-                    
-                    if ($messageType !== 'error') {
-                        $message = "{$config['app']['facility_name']}情報を正常に更新しました";
-                        $messageType = 'success';
-                        
-                        // 更新後のデータを再取得
-                        $stmt = $db->prepare('SELECT * FROM facilities WHERE id = :id');
-                        $stmt->bindValue(':id', $facilityId, SQLITE3_INTEGER);
-                        $res = $stmt->execute();
-                        $facility = $res->fetchArray(SQLITE3_ASSOC);
-                        
-                        // 画像も再取得
-                        $images = [];
-                        $stmt = $db->prepare('SELECT id, filename, original_name FROM facility_images WHERE facility_id = :facility_id ORDER BY id');
-                        $stmt->bindValue(':facility_id', $facilityId, SQLITE3_INTEGER);
-                        $res = $stmt->execute();
-                        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
-                            $images[] = $row;
-                        }
-                    }
-                } else {
-                    $message = "{$config['app']['facility_name']}情報の更新に失敗しました";
-                    $messageType = 'error';
-                }
-            }
-        } else {
-            $message = '必要な項目が入力されていません';
-            $messageType = 'error';
-        }
-        } // レビュー文字数チェックのelse文終了
+        // 画像も再取得
+        $images = getFacilityImages($db, $facilityId);
     }
 }
 
 // 画像削除処理
 if (isset($_GET['delete_image'])) {
     $imageId = intval($_GET['delete_image']);
+    $deleteMessage = deleteFacilityImage($db, $imageId, $facilityId, $config);
     
-    $stmt = $db->prepare('SELECT filename FROM facility_images WHERE id = :id AND facility_id = :facility_id');
-    $stmt->bindValue(':id', $imageId, SQLITE3_INTEGER);
-    $stmt->bindValue(':facility_id', $facilityId, SQLITE3_INTEGER);
-    $res = $stmt->execute();
-    $imageRow = $res->fetchArray(SQLITE3_ASSOC);
-    
-    if ($imageRow) {
-        // ファイルを削除
-        $filePath = __DIR__ . '/' . $config['storage']['images_dir'] . '/' . $imageRow['filename'];
-        if (file_exists($filePath)) {
-            unlink($filePath);
-        }
-        
-        // データベースから削除
-        $db->exec("DELETE FROM facility_images WHERE id = $imageId");
-        
+    if ($deleteMessage) {
         // 画像リストを再取得
-        $images = [];
-        $stmt = $db->prepare('SELECT id, filename, original_name FROM facility_images WHERE facility_id = :facility_id ORDER BY id');
-        $stmt->bindValue(':facility_id', $facilityId, SQLITE3_INTEGER);
-        $res = $stmt->execute();
-        while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
-            $images[] = $row;
-        }
+        $images = getFacilityImages($db, $facilityId);
         
-        $message = "{$config['app']['field_labels']['images']}を削除しました";
+        $message = $deleteMessage;
         $messageType = 'success';
     }
 }

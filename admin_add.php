@@ -1,18 +1,7 @@
 <?php
 // 管理者用施設登録画面
 require_once 'auth_check.php';
-
-// 時刻をHTML time input用にフォーマットする関数
-function formatTimeForInput($time) {
-    if (empty($time)) return '';
-    // 既に HH:MM 形式の場合はそのまま返す
-    if (preg_match('/^\d{2}:\d{2}$/', $time)) return $time;
-    // H:MM 形式を HH:MM 形式に変換
-    if (preg_match('/^(\d{1,2}):(\d{2})$/', $time, $matches)) {
-        return sprintf('%02d:%02d', intval($matches[1]), intval($matches[2]));
-    }
-    return $time;
-}
+require_once 'facility_form_functions.php';
 
 // 認証チェック
 checkAuth();
@@ -27,136 +16,14 @@ $messageType = '';
 
 // 登録処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'])) {
-    // CSRF対策
-    if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
-        $message = 'セキュリティエラーが発生しました。再度お試しください。';
-        $messageType = 'error';
-    } else {
-    $name = mb_substr($_POST['name'], 0, 100);
-    $name_kana = mb_substr($_POST['name_kana'] ?? '', 0, 100);
-    $address = mb_substr($_POST['address'] ?? '', 0, 200);
-    $address_detail = mb_substr($_POST['address_detail'] ?? '', 0, 200);
-    $installation_position = mb_substr($_POST['installation_position'] ?? '', 0, 200);
-    $phone = mb_substr($_POST['phone'] ?? '', 0, 50);
-    $phone_extension = mb_substr($_POST['phone_extension'] ?? '', 0, 20);
-    $corporate_number = mb_substr($_POST['corporate_number'] ?? '', 0, 50);
-    $organization_name = mb_substr($_POST['organization_name'] ?? '', 0, 100);
-    $available_days = mb_substr($_POST['available_days'] ?? '', 0, 50);
-    $start_time = mb_substr($_POST['start_time'] ?? '', 0, 10);
-    $end_time = mb_substr($_POST['end_time'] ?? '', 0, 10);
-    $available_hours_note = mb_substr($_POST['available_hours_note'] ?? '', 0, 500);
-    $pediatric_support = $_POST['pediatric_support'] ?? '';
-    $website = mb_substr($_POST['website'] ?? '', 0, 200);
-    $note = mb_substr($_POST['note'] ?? '', 0, 1000);
-    $category = $_POST['category'] ?? '';
-    $lat = floatval($_POST['lat']);
-    $lng = floatval($_POST['lng']);
+    $result = processFacilityForm();
+    $message = $result['message'];
+    $messageType = $result['messageType'];
     
-    // 文字数チェック
-    if (mb_strlen($note) > 1000) {
-        $message = "{$config['app']['field_labels']['note']}は1000文字以内で入力してください";
-        $messageType = 'error';
-    } else {
-    
-    if (!empty($name) && $lat && $lng && !empty($category)) {
-        $db = getDatabase();
-        
-        // 同じ名前の施設が既に存在するかチェック
-        $stmt = $db->prepare('SELECT COUNT(*) as cnt FROM facilities WHERE name = :name');
-        $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-        $res = $stmt->execute();
-        $row = $res->fetchArray(SQLITE3_ASSOC);
-        
-        if ($row['cnt'] > 0) {
-            $message = "同じ名前の{$config['app']['facility_name']}が既に登録されています";
-            $messageType = 'error';
-        } else {
-            // 施設を登録（日本時間でupdated_atを設定）
-            $japanTime = date('Y-m-d H:i:s', time());
-            $stmt = $db->prepare('INSERT INTO facilities (name, name_kana, lat, lng, address, address_detail, installation_position, phone, phone_extension, corporate_number, organization_name, available_days, start_time, end_time, available_hours_note, pediatric_support, website, note, category, updated_at) VALUES (:name, :name_kana, :lat, :lng, :address, :address_detail, :installation_position, :phone, :phone_extension, :corporate_number, :organization_name, :available_days, :start_time, :end_time, :available_hours_note, :pediatric_support, :website, :note, :category, :updated_at)');
-            $stmt->bindValue(':name', $name, SQLITE3_TEXT);
-            $stmt->bindValue(':name_kana', $name_kana, SQLITE3_TEXT);
-            $stmt->bindValue(':lat', $lat, SQLITE3_FLOAT);
-            $stmt->bindValue(':lng', $lng, SQLITE3_FLOAT);
-            $stmt->bindValue(':address', $address, SQLITE3_TEXT);
-            $stmt->bindValue(':address_detail', $address_detail, SQLITE3_TEXT);
-            $stmt->bindValue(':installation_position', $installation_position, SQLITE3_TEXT);
-            $stmt->bindValue(':phone', $phone, SQLITE3_TEXT);
-            $stmt->bindValue(':phone_extension', $phone_extension, SQLITE3_TEXT);
-            $stmt->bindValue(':corporate_number', $corporate_number, SQLITE3_TEXT);
-            $stmt->bindValue(':organization_name', $organization_name, SQLITE3_TEXT);
-            $stmt->bindValue(':available_days', $available_days, SQLITE3_TEXT);
-            $stmt->bindValue(':start_time', $start_time, SQLITE3_TEXT);
-            $stmt->bindValue(':end_time', $end_time, SQLITE3_TEXT);
-            $stmt->bindValue(':available_hours_note', $available_hours_note, SQLITE3_TEXT);
-            $stmt->bindValue(':pediatric_support', $pediatric_support, SQLITE3_TEXT);
-            $stmt->bindValue(':website', $website, SQLITE3_TEXT);
-            $stmt->bindValue(':note', $note, SQLITE3_TEXT);
-            $stmt->bindValue(':category', $category, SQLITE3_TEXT);
-            $stmt->bindValue(':updated_at', $japanTime, SQLITE3_TEXT);
-            $result = $stmt->execute();
-            
-            if ($result) {
-                $facilityId = $db->lastInsertRowID();
-                
-                // 画像ファイルの処理
-                if (isset($_FILES['images']) && $_FILES['images']['error'][0] !== UPLOAD_ERR_NO_FILE) {
-                    $uploadDir = __DIR__ . '/' . $config['storage']['images_dir'] . '/';
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
-                    }
-                    
-                    $files = $_FILES['images'];
-                    $fileCount = count($files['name']);
-                    
-                    if ($fileCount <= 10) {
-                        for ($i = 0; $i < $fileCount; $i++) {
-                            if ($files['error'][$i] === UPLOAD_ERR_OK) {
-                                $fileName = $files['name'][$i];
-                                $fileTmpName = $files['tmp_name'][$i];
-                                $fileSize = $files['size'][$i];
-                                
-                                // ファイルサイズチェック（5MB）
-                                if ($fileSize <= 5 * 1024 * 1024) {
-                                    // ファイル形式チェック
-                                    $imageInfo = getimagesize($fileTmpName);
-                                    if ($imageInfo !== false) {
-                                        // ファイル名生成（重複防止）
-                                        $extension = pathinfo($fileName, PATHINFO_EXTENSION);
-                                        $newFileName = $facilityId . '_' . uniqid() . '.' . $extension;
-                                        $filePath = $uploadDir . $newFileName;
-                                        
-                                        if (move_uploaded_file($fileTmpName, $filePath)) {
-                                            // データベースに画像情報を保存
-                                            $stmt = $db->prepare('INSERT INTO facility_images (facility_id, filename, original_name) VALUES (:facility_id, :filename, :original_name)');
-                                            $stmt->bindValue(':facility_id', $facilityId, SQLITE3_INTEGER);
-                                            $stmt->bindValue(':filename', $newFileName, SQLITE3_TEXT);
-                                            $stmt->bindValue(':original_name', $fileName, SQLITE3_TEXT);
-                                            $stmt->execute();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                $message = "{$config['app']['facility_name']}を正常に登録しました";
-                $messageType = 'success';
-                
-                // フォームクリア
-                $_POST = [];
-            } else {
-                $message = "{$config['app']['facility_name']}の登録に失敗しました";
-                $messageType = 'error';
-            }
-        }
-    } else {
-        $message = '必要な項目が入力されていません';
-        $messageType = 'error';
+    // 成功時はフォームをクリア
+    if ($result['success'] && $result['clearForm']) {
+        $_POST = [];
     }
-    } // ノート文字数チェックのelse文終了
-    } // CSRF対策のelse文終了
 }
 ?>
 <!DOCTYPE html>
