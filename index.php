@@ -16,14 +16,26 @@ $appName = $config['app']['name'];
 </head>
 <body>
     <div class="header">
-        <h1><?= htmlspecialchars($appName) ?> <span style="font-size: 0.5em; color: #666;">最終更新日:2025/3/19</span></h1>
+        <h1><?= htmlspecialchars($appName) ?></h1>
         <div>
+            <button id="infoBtn" class="info-btn" title="お知らせ">☰</button>
             <button id="filterBtn"><?= htmlspecialchars($config['app']['field_labels']['category']) ?>選択</button>
             <button id="locateBtn">現在位置に移動</button>
         </div>
     </div>
     
     <div class="map-container">
+        <!-- 情報メニュー -->
+        <div id="infoView">
+            <div class="infoView-content">
+                <div class="infoView-options">
+                    ■ 免責事項<br>
+                    　掲載情報は参考です<br>　最新の設置状況はご自身でご確認ください<br><br>
+                    <span style="font-size: 1.0em; color: #666;">- 最終更新日:2025/3/19 -<br>
+                </div>
+            </div>
+        </div>
+        
         <!-- カテゴリーフィルターメニュー -->
         <div id="categoryFilter">
             <div class="filter-content">
@@ -44,7 +56,7 @@ $appName = $config['app']['name'];
                 </div>
             </div>
         </div>
-        
+
         <div id="map"></div>
     </div>
     
@@ -267,6 +279,21 @@ $appName = $config['app']['name'];
       }
     };
     
+      
+    // 情報ボタンで情報メニューを表示
+    document.getElementById('infoBtn').onclick = function() {
+      const infoContext = document.getElementById('infoView');
+      // getComputedStyleで実際の表示状態を取得
+      const computedStyle = window.getComputedStyle(infoContext);
+      const isVisible = computedStyle.display === 'block';
+      
+      if (isVisible) {
+        infoContext.style.display = 'none';
+      } else {
+        infoContext.style.display = 'block';
+      }
+    };
+      
     // カテゴリーフィルター機能（トグル）
     document.getElementById('filterBtn').onclick = function() {
       const filterMenu = document.getElementById('categoryFilter');
