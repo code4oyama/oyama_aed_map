@@ -1,274 +1,505 @@
-# おやまカレーマップ
+# おやまAEDマップ
 
-栃木県小山市を中心としたエリアのカレーショップ情報を提供する地図アプリです。
+栃木県小山市のAED（自動体外式除細動器）設置場所を地図で確認できるWebアプリケーションです。
 
-一般ユーザーはindex.phpへアクセスすることでカレーショップ情報をピン留めした地図を閲覧できます。起動時には小山市を中心としたエリアが表示され、端末のGPS情報を使ってユーザーの現在位置を中心に表示することもできます。
+## 📍 ユーザー向け使い方
 
-管理ユーザーはカレーショップ情報の登録や削除、編集などが行えます。ショップ情報には、施設名、住所、レビュー、写真画像などが含まれます。
+### 地図でAED設置場所を確認
+1. **メインページ**: [`index.php`](index.php) にアクセス
+2. **地図表示**: 小山市を中心とした地図にAED設置場所がマーカーで表示
+3. **現在位置取得**: 「現在位置」ボタンでGPS機能を使用して現在地に移動
+4. **カテゴリフィルター**: 施設の種類別に表示を絞り込み可能
 
-## 汎用性
+### 施設詳細情報の確認
+1. **マーカークリック**: 地図上のマーカーをクリックで基本情報を表示
+2. **詳細ページ**: 「詳細を見る」ボタンで施設詳細ページ（`facility_detail.php`）に移動
+3. **詳細情報**: 施設名、住所、電話番号、利用時間、小児対応の有無、画像など
+4. **画像ギャラリー**: 施設の画像をクリックでモーダル表示・拡大表示
 
-このアプリはカレーショップにかぎらず、地域の施設情報を地図上に表示するWebアプリケーションとして完全に汎用化されています。設定ファイルの変更のみで異なる施設タイプに対応できます。
+### 施設情報の内容
+- **基本情報**: 施設名、住所、電話番号、所属組織
+- **利用情報**: 利用可能日、利用時間、小児対応の有無
+- **画像**: 施設の外観・内観・AED設置場所の写真
+- **備考**: 利用に関する注意事項や詳細情報
 
-**設定可能な用途例**: カレーショップ、レストラン、観光スポット、公共施設、ショッピングモール、医療機関など
+## 🛠️ 管理者向け使い方
 
-### 汎用化の特徴
-- **設定ファイルベース**: カテゴリ、ラベル、アプリ名を統一管理
-- **データベース構造**: 任意の施設タイプに対応した汎用テーブル構造
-- **コード中立性**: 特定の施設タイプに依存しない変数名・関数名
-- **柔軟なカスタマイズ**: 新しい施設タイプへの対応が容易
+### ログイン・認証
+1. **管理者ログイン**: [`login.php`](login.php) でログイン
+2. **セキュリティ**: セッションベース認証・30分自動ログアウト
+3. **パスワード変更**: 管理画面からパスワード変更可能
 
-## 機能概要
+### AED設置場所の管理
+1. **施設一覧**: [`admin.php`](admin.php) で登録済み施設の一覧・編集・削除
+2. **新規登録**: [`admin_add.php`](admin_add.php) で新しいAED設置場所を登録
+   - 地図で位置指定（クリック・ドラッグ）
+   - 施設情報入力（名前、住所、電話番号、利用時間等）
+   - 画像アップロード（最大10枚、5MB以下）
+3. **施設編集**: [`admin_edit.php`](admin_edit.php) で既存施設の情報修正
+   - 位置変更、情報更新、画像追加・削除
 
-### 一般ユーザー向け
-- **地図表示**: OpenStreetMap + Leaflet.jsによる施設マーカー表示
-- **施設情報**: 施設名、住所、レビュー、画像（最大10枚）の表示
-- **施設詳細ページ**: 個別店舗の詳細情報・地図・画像ギャラリー
-- **現在位置取得**: GPS機能による現在位置への移動
-- **画像閲覧**: ポップアップ表示とモーダル拡大表示
+### CSVインポート機能
+1. **データベース初期化**: [`init_db.php`](init_db.php) でCSVファイルからデータ一括登録
+2. **ブラウザアップロード**: CSVファイルをブラウザから選択・アップロード
+3. **小児対応デフォルト**: 空欄の小児対応フィールドは自動的に「無」に設定
 
-### 管理者向け
-- **認証システム**: ログイン・セッション管理・自動ログアウト
-- **施設管理**: 新規登録・編集・削除
-- **画像管理**: アップロード（5MB以下、最大10枚）・個別削除
-- **レビュー管理**: 最大2000文字のレビュー・説明文
-- **パスワード変更**: 管理画面からのパスワード変更
-- **設定カスタマイズ**: 施設名称・初期地図位置・アプリ名の変更
+## ⚙️ セットアップ手順
 
-## 技術構成
-- **言語**: PHP 7.4以上
-- **データベース**: SQLite3
-- **地図**: OpenStreetMap（Leaflet.js）
-- **認証**: セッションベース認証（30分タイムアウト）
-- **画像保存**: ファイルシステム（`facility_images/`ディレクトリ）
-- **スタイル**: 統合CSS（共通・管理画面・メインページ別ファイル）
-- **設定管理**: 一元的な設定ファイル（Web外配置）
+### 1. ファイル配置
+Webサーバーに以下のファイル構成でアップロード：
 
-## セットアップ手順
-
-### 1. ファイルアップロード
-さくらインターネットのスタンダードプランのwwwディレクトリにアップロード：
 ```
 www/
-├── index.php
-├── login.php
-├── admin.php
-├── admin_add.php
-├── admin_edit.php
-├── admin_password.php
-├── api_facilities.php
-├── api_add_facility.php （現在未使用）
-├── auth_check.php
-├── init_db.php
+├── index.php                    # メインページ
+├── facility_detail.php         # 施設詳細ページ
+├── login.php                   # 管理者ログイン
+├── admin.php                   # 管理者ダッシュボード
+├── admin_add.php               # 新規施設登録
+├── admin_edit.php              # 施設編集
+├── admin_password.php          # パスワード変更
+├── auth_check.php              # 認証・セキュリティ
+├── api_facilities.php          # 施設情報API
+├── init_db.php                 # データベース初期化
+├── facility_form_functions.php # 共通フォーム処理
 ├── css/
-│   ├── common.css （共通スタイル）
-│   ├── admin.css （管理画面用スタイル）
-│   └── main.css （メインページ用スタイル）
-├── license/ （ライセンス関連ファイル）
-│   ├── LICENSE
-│   ├── THIRD_PARTY_LICENSES.md
-│   ├── LICENSE_LEAFLET
-│   └── LICENSE_OPENSTREETMAP
-└── facility_images/ （自動作成）
+│   ├── common.css              # 共通スタイル
+│   ├── admin.css               # 管理画面用CSS
+│   └── main.css                # メインページ用CSS
+├── license/                    # ライセンス情報
+└── facility_images/            # 画像保存ディレクトリ（自動作成）
 
-app_db/oyama_curry_map/ （www外のディレクトリ）
-├── config.php
-└── facilities.db （初期化時に作成）
+app_db/oyama_aed_map/           # Web外ディレクトリ
+├── config.php                  # 設定ファイル
+└── facilities.db               # SQLiteデータベース
 ```
 
-### 2. 設定ファイル
-`app_db/oyama_curry_map/config.php` のファイル権限を600に設定：
+### 2. 権限設定
 ```bash
-chmod 600 app_db/oyama_curry_map/config.php
+# 設定ファイルの権限を制限
+chmod 600 app_db/oyama_aed_map/config.php
+
+# 画像ディレクトリの権限設定
+chmod 755 facility_images/
 ```
 
 ### 3. データベース初期化
-**管理者でログイン後**、ブラウザで `init_db.php` にアクセスしてデータベースを初期化：
+1. **管理者ログイン**: [`login.php`](login.php) でログイン（初期パスワード: admin123）
+2. **データベース初期化**: [`init_db.php`](init_db.php) にアクセス
+3. **初期化オプション選択**:
+   - **構成のみ更新**: 既存データを保持してテーブル構造のみ更新
+   - **全削除して初期化**: 全データを削除してサンプルデータで初期化
+   - **CSVインポート**: ブラウザからCSVファイルをアップロードして一括登録
 
-#### 初期化オプション
-- **構成のみ更新（データ保持）**: 既存データを保持してテーブル構造のみ更新
-- **全削除して初期化**: 全データを削除してサンプルデータで初期化
+### 4. 設定カスタマイズ
+`app_db/oyama_aed_map/config.php` で以下を変更：
 
-#### セキュリティ機能
-- **認証チェック**: 管理者ログインが必要
-- **CSRF対策**: トークン検証による不正アクセス防止
-- **処理確認**: 実行前の確認メッセージ表示
-
-### 4. 設定カスタマイズ・セキュリティ
-- 初期パスワードを変更
-- `app_db/oyama_curry_map/config.php` で以下をカスタマイズ：
-  - アプリケーション名（`app.name`）
-  - 施設の呼称（`app.facility_name`）: 「店舗」「施設」「レストラン」など
-  - 初期地図位置（`map.initial_latitude`, `map.initial_longitude`）
-  - 管理者パスワード（`admin.password`）
-
-## 使用方法
-
-### 一般ユーザー
-1. `index.php` にアクセス
-2. 地図上のマーカーをクリックで施設情報表示
-3. 「詳細を見る」ボタンで施設詳細ページ（`facility_detail.php`）に移動
-4. 「現在位置」ボタンでGPS位置に移動
-
-### 管理者
-1. `login.php` でログイン（初期パスワード: admin123）
-2. **管理画面**: 施設一覧・編集・削除
-3. **新規登録**: 地図で位置指定・施設情報・画像・レビュー入力
-4. **施設編集**: 既存施設の情報・画像・レビュー編集
-5. **パスワード変更**: セキュリティ向上のため定期変更推奨
-
-## ファイル構成
-
-### メインファイル
-- `index.php` - 一般ユーザー向け地図画面
-- `facility_detail.php` - 施設詳細表示ページ
-- `login.php` - 管理者ログイン画面
-- `auth_check.php` - 認証・セキュリティ機能
-
-### 管理者画面
-- `admin.php` - 施設一覧・管理画面
-- `admin_add.php` - 新規施設登録画面
-- `admin_edit.php` - 施設編集画面
-- `admin_password.php` - パスワード変更画面
-
-### API
-- `api_facilities.php` - 施設一覧JSON API
-- `api_add_facility.php` - 施設登録API（認証付き）**※現在未使用**
-
-### スタイルシート
-- `css/common.css` - 共通スタイル（ヘッダー、基本レイアウト）
-- `css/admin.css` - 管理画面用統合CSS
-- `css/main.css` - メインページ・詳細ページ用CSS
-
-### 設定・初期化
-- `app_db/oyama_curry_map/config.php` - 設定ファイル（Web外配置）
-- `init_db.php` - データベース初期化（認証・CSRF対策付き）
-
-### データ
-- `app_db/oyama_curry_map/facilities.db` - SQLiteデータベース
-- `facility_images/` - アップロード画像保存ディレクトリ
-
-## 設定項目
-
-### config.php の主要設定
-
-#### アプリケーション設定
 ```php
 'app' => [
-    'name' => 'おやまカレーマップ',           // アプリケーション名
-    'facility_name' => '店舗',                // 施設の呼称
-    'version' => '1.0.0',
-    'timezone' => 'Asia/Tokyo'
+    'name' => 'おやまAEDマップ',      # アプリケーション名
+    'facility_name' => 'AED設置場所', # 施設の呼称
+    'categories' => ['公共施設', '民間施設', '教育機関', '医療機関', 'その他'] # カテゴリ
+],
+'map' => [
+    'initial_latitude' => 36.3141,   # 初期表示緯度（小山市）
+    'initial_longitude' => 139.8006, # 初期表示経度（小山市）
+    'initial_zoom' => 14             # 初期ズームレベル
+],
+'admin' => [
+    'password' => 'your_secure_password', # 管理者パスワード（要変更）
+    'session_timeout' => 1800       # セッションタイムアウト（30分）
 ]
 ```
 
-#### 地図設定
+## 💻 技術説明
+
+### システム構成
+- **フロントエンド**: HTML5 + CSS3 + JavaScript（ES6+）
+- **バックエンド**: PHP 7.4+ 
+- **データベース**: SQLite3（WALモード）
+- **地図**: OpenStreetMap + Leaflet.js 1.9+
+- **認証**: PHPセッション + CSRF対策
+
+### 主要技術要素
+1. **地図表示**: Leaflet.jsライブラリによる軽量地図表示
+2. **現在位置取得**: Geolocation API使用
+3. **レスポンシブデザイン**: モバイル・デスクトップ対応
+4. **画像処理**: GD拡張による画像リサイズ・検証
+5. **セキュリティ**: 入力検証、XSS対策、CSRF対策
+6. **データベース**: SQLite WALモードによる同時実行対応
+
+### データベース構造
+```sql
+-- 施設情報テーブル
+CREATE TABLE facilities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    csv_no TEXT,                    -- CSV番号（インポート用）
+    name TEXT NOT NULL,             -- 施設名
+    name_kana TEXT,                 -- 施設名（カナ）
+    lat REAL NOT NULL,              -- 緯度
+    lng REAL NOT NULL,              -- 経度
+    address TEXT,                   -- 住所
+    address_detail TEXT,            -- 詳細住所
+    installation_position TEXT,     -- 設置場所
+    phone TEXT,                     -- 電話番号
+    phone_extension TEXT,           -- 電話番号（内線）
+    corporate_number TEXT,          -- 法人番号
+    organization_name TEXT,         -- 組織名
+    available_days TEXT,            -- 利用可能日
+    start_time TEXT,                -- 開始時間
+    end_time TEXT,                  -- 終了時間
+    available_hours_note TEXT,      -- 利用時間の注記
+    pediatric_support TEXT,         -- 小児対応（有/無）
+    website TEXT,                   -- ウェブサイト
+    note TEXT,                      -- 備考
+    category TEXT,                  -- カテゴリ
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 画像情報テーブル
+CREATE TABLE facility_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    facility_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (facility_id) REFERENCES facilities(id) ON DELETE CASCADE
+);
+```
+
+### セキュリティ機能
+- **認証**: セッションベース認証
+- **CSRF対策**: トークン検証
+- **XSS対策**: 入力値のサニタイズ
+- **ファイル制限**: 画像ファイルのみ、5MB以下、最大10枚
+- **権限設定**: 設定ファイルはWeb外配置、権限600
+
+## 🔧 別のマップシステムを作る際の手順
+
+このAEDマップシステムは完全に汎用化されており、他の施設マップシステムに簡単に転用できます。
+
+### 1. 基本設定の変更
+`app_db/oyama_aed_map/config.php` を編集：
+
+```php
+'app' => [
+    'name' => '新しいマップアプリ名',
+    'facility_name' => '施設',        # 「レストラン」「観光地」「公園」など
+    'categories' => ['カテゴリ1', 'カテゴリ2', 'カテゴリ3'], # 用途に応じたカテゴリ
+    'field_labels' => [
+        'name' => '施設名',
+        'address' => '住所',
+        'phone' => '電話番号',
+        'category' => 'カテゴリ',
+        # 必要に応じてラベルを変更
+    ]
+],
+'map' => [
+    'initial_latitude' => 35.6762,   # 対象地域の緯度
+    'initial_longitude' => 139.6503, # 対象地域の経度
+    'initial_zoom' => 12
+]
+```
+
+### 2. データベーステーブル構成の変更
+`config.php` の `database.tables` セクションでテーブル構成を変更できます：
+
+```php
+'database' => [
+    'tables' => [
+        'facilities' => [
+            'columns' => [
+                'id' => 'INTEGER PRIMARY KEY AUTOINCREMENT',
+                'name' => 'TEXT NOT NULL',
+                'lat' => 'REAL NOT NULL',
+                'lng' => 'REAL NOT NULL',
+                'address' => 'TEXT',
+                'phone' => 'TEXT',
+                'website' => 'TEXT',
+                'category' => 'TEXT',
+                // 用途に応じて追加・削除
+                'cuisine_type' => 'TEXT',      # レストラン用
+                'price_range' => 'TEXT',       # 価格帯
+                'rating' => 'REAL',            # 評価
+                'opening_hours' => 'TEXT',     # 営業時間
+                'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+            ],
+            'indexes' => [
+                'idx_facilities_location' => ['lat', 'lng'],
+                'idx_facilities_category' => ['category'],
+                'idx_facilities_rating' => ['rating']  # 評価での検索用
+            ]
+        ]
+    ]
+]
+```
+
+#### 観光地マップ用のテーブル構成例
+```php
+'database' => [
+    'tables' => [
+        'facilities' => [
+            'columns' => [
+                'id' => 'INTEGER PRIMARY KEY AUTOINCREMENT',
+                'name' => 'TEXT NOT NULL',
+                'lat' => 'REAL NOT NULL',
+                'lng' => 'REAL NOT NULL',
+                'address' => 'TEXT',
+                'phone' => 'TEXT',
+                'website' => 'TEXT',
+                'category' => 'TEXT',
+                'admission_fee' => 'TEXT',     # 入場料
+                'opening_hours' => 'TEXT',     # 開館時間
+                'closed_days' => 'TEXT',       # 休館日
+                'parking' => 'TEXT',           # 駐車場情報
+                'access_info' => 'TEXT',       # アクセス情報
+                'season' => 'TEXT',            # 見頃・シーズン
+                'note' => 'TEXT',              # 備考
+                'updated_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP'
+            ]
+        ]
+    ]
+]
+```
+
+**重要**: テーブル構成を変更した後は、管理者ログイン後に [`init_db.php`](init_db.php) で「構成のみ更新」を実行してデータベースに反映させてください。
+
+### 3. フィールドラベルのカスタマイズ
+用途に応じてフィールドラベルを変更：
+
+```php
+// 例: レストランマップの場合
+'field_labels' => [
+    'name' => 'レストラン名',
+    'address' => '住所',
+    'phone' => '電話番号',
+    'website' => 'ウェブサイト',
+    'opening_hours' => '営業時間',
+    'category' => '料理ジャンル',
+    'cuisine_type' => '料理種別',
+    'price_range' => '価格帯',
+    'rating' => '評価',
+    'note' => '備考（予約情報、アクセス等）'
+],
+'categories' => ['和食', '洋食', '中華', 'イタリアン', 'フレンチ', 'カフェ', 'ファストフード']
+```
+
+### 4. 用途別カスタマイズ例
+
+#### 観光地マップ
+```php
+'app' => [
+    'name' => '○○市観光マップ',
+    'facility_name' => '観光地',
+    'categories' => ['神社・寺院', '公園', '博物館', '展望台', '温泉', 'グルメ', 'お土産']
+],
+'field_labels' => [
+    'name' => '観光地名',
+    'address' => '住所',
+    'phone' => '問い合わせ先',
+    'website' => 'ウェブサイト',
+    'business_hours' => '営業時間',
+    'category' => '観光地種別',
+    'review' => '観光地紹介',
+    'note' => 'アクセス・料金情報'
+]
+```
+
+#### 公共施設マップ
+```php
+'app' => [
+    'name' => '○○市公共施設マップ',
+    'facility_name' => '公共施設',
+    'categories' => ['市役所', '図書館', '体育館', '公民館', '病院', '学校', '公園']
+],
+'field_labels' => [
+    'name' => '施設名',
+    'address' => '住所',
+    'phone' => '電話番号',
+    'website' => 'ウェブサイト',
+    'business_hours' => '開館時間',
+    'category' => '施設種別',
+    'review' => '施設案内',
+    'note' => '休館日・利用料金'
+]
+```
+
+### 4. 外観カスタマイズ
+CSS ファイルを編集してデザインを変更：
+
+```css
+/* css/common.css - 基本色の変更 */
+:root {
+    --primary-color: #your-color;     /* メインカラー */
+    --secondary-color: #your-color;   /* サブカラー */
+    --accent-color: #your-color;      /* アクセントカラー */
+}
+
+/* ヘッダーの背景色 */
+.header {
+    background-color: var(--primary-color);
+}
+```
+
+### 5. 地図の初期設定
+対象地域に応じて地図の初期表示を調整：
+
 ```php
 'map' => [
-    'initial_latitude' => 36.3141,   // 初期表示緯度
-    'initial_longitude' => 139.8006, // 初期表示経度
-    'initial_zoom' => 14             // 初期ズームレベル
+    'initial_latitude' => 35.6762,   # 東京の場合
+    'initial_longitude' => 139.6503,
+    'initial_zoom' => 12              # 市区町村レベル
 ]
 ```
 
-#### 管理者設定
+### 6. サンプルデータの準備
+新しい用途に応じたサンプルデータを作成：
+
 ```php
-'admin' => [
-    'password' => 'admin123',        // 管理者パスワード
-    'session_timeout' => 1800       // セッションタイムアウト（秒）
+'sample_data' => [
+    [
+        'name' => 'サンプル施設1',
+        'lat' => 35.6762,
+        'lng' => 139.6503,
+        'category' => 'カテゴリ1',
+        'address' => 'サンプル住所1',
+        'phone' => '03-1234-5678'
+    ],
+    // 追加のサンプルデータ
 ]
 ```
 
-#### セキュリティ設定
+### 7. フィールド表示部分の手動変更
+用途に応じて各ページのフィールド表示を手動で調整する必要があります：
+
+#### 対象ファイル
+- **`facility_detail.php`** - 施設詳細ページの表示項目
+- **`admin.php`** - 管理画面の一覧表示項目
+- **`admin_add.php`** - 新規登録フォームの項目
+- **`admin_edit.php`** - 編集フォームの項目
+- **`index.php`** - 地図ポップアップの表示項目
+
+#### 変更例（レストランマップの場合）
 ```php
-'security' => [
-    'max_image_size' => 5 * 1024 * 1024,  // 最大画像サイズ（5MB）
-    'max_images_per_facility' => 10,      // 施設あたり最大画像数
-    'max_review_length' => 2000           // レビュー最大文字数
+// facility_detail.php での表示項目調整
+<?php if (!empty($facility['business_hours'])): ?>
+    <p><strong>営業時間:</strong> <?= htmlspecialchars($facility['business_hours']) ?></p>
+<?php endif; ?>
+
+<?php if (!empty($facility['website'])): ?>
+    <p><strong>ウェブサイト:</strong> <a href="<?= htmlspecialchars($facility['website']) ?>" target="_blank">公式サイト</a></p>
+<?php endif; ?>
+
+// 料理ジャンルの表示
+<?php if (!empty($facility['category'])): ?>
+    <p><strong>料理ジャンル:</strong> <?= htmlspecialchars($facility['category']) ?></p>
+<?php endif; ?>
+```
+
+#### 注意点
+- **フィールド構成**: データベースのフィールド名に合わせて変更
+- **ユーザビリティ**: 用途に応じた情報の優先順位を考慮
+- **レスポンシブ**: モバイル表示での見やすさを確認
+
+### 8. CSVインポート機能でのデフォルト値設定
+`init_db.php` のCSVアップロード機能で、必要に応じてデフォルト値を設定できます：
+
+#### config.php での設定例
+```php
+'csv_import' => [
+    'field_mapping' => [
+        'name' => 'name',
+        'address' => 'address',
+        'phone' => 'phone',
+        // CSVに存在しないフィールドにデフォルト値を設定
+        'category' => 'default_category',
+        'website' => '',
+        'note' => '情報更新予定'
+    ],
+    'default_values' => [
+        'pediatric_support' => '無',      // 小児対応のデフォルト値
+        'category' => 'その他',          // カテゴリのデフォルト値
+        'available_days' => '平日',       // 利用可能日のデフォルト値
+        'start_time' => '09:00',         // 開始時間のデフォルト値
+        'end_time' => '17:00'            // 終了時間のデフォルト値
+    ]
 ]
 ```
 
-## セキュリティ機能
-- **認証システム**: セッションベース認証
-- **CSRF対策**: トークン検証
-- **パスワード保護**: Web外設定ファイル
-- **セッションタイムアウト**: 30分自動ログアウト
-- **ファイル制限**: 画像5MB以下、10枚まで
-- **入力検証**: XSS対策、文字数制限
+#### init_db.php の categorize_facility 関数の書き換え
+用途に応じて自動カテゴリ分類ロジックを変更する必要があります：
 
-## データベース構造
+```php
+// init_db.php の categorize_facility 関数例（レストランマップ用）
+function categorize_facility($name, $address = '') {
+    $name = mb_strtolower($name);
+    $address = mb_strtolower($address);
+    
+    // 料理ジャンル別の分類
+    if (strpos($name, '寿司') !== false || strpos($name, '鮨') !== false) return '和食';
+    if (strpos($name, 'ラーメン') !== false || strpos($name, '中華') !== false) return '中華';
+    if (strpos($name, 'カフェ') !== false || strpos($name, 'コーヒー') !== false) return 'カフェ';
+    if (strpos($name, 'ステーキ') !== false || strpos($name, 'イタリアン') !== false) return '洋食';
+    if (strpos($name, 'マクドナルド') !== false || strpos($name, 'kfc') !== false) return 'ファストフード';
+    
+    return 'その他';
+}
 
-### テーブル一覧
+// 観光地マップ用の例
+function categorize_facility($name, $address = '') {
+    $name = mb_strtolower($name);
+    
+    if (strpos($name, '神社') !== false || strpos($name, '寺院') !== false) return '神社・寺院';
+    if (strpos($name, '公園') !== false || strpos($name, '庭園') !== false) return '公園';
+    if (strpos($name, '博物館') !== false || strpos($name, '美術館') !== false) return '博物館';
+    if (strpos($name, '展望台') !== false || strpos($name, 'タワー') !== false) return '展望台';
+    if (strpos($name, '温泉') !== false || strpos($name, '湯') !== false) return '温泉';
+    
+    return 'その他';
+}
+```
 
-#### 1. facilities テーブル（施設情報）
-| カラム名 | データ型 | 制約 | 説明 |
-|---------|----------|-----|------|
-| id | INTEGER | PRIMARY KEY AUTOINCREMENT | 施設ID |
-| name | TEXT | NOT NULL | 施設名 |
-| lat | REAL | NOT NULL | 緯度 |
-| lng | REAL | NOT NULL | 経度 |
-| address | TEXT | | 住所 |
-| description | TEXT | | 説明 |
-| phone | TEXT | | 電話番号 |
-| website | TEXT | | ウェブページアドレス |
-| business_hours | TEXT | | 営業時間 |
-| sns_account | TEXT | | SNSアカウント |
-| category | TEXT | | カテゴリ |
-| review | TEXT | | レビュー・詳細説明文 |
-| updated_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 更新日時 |
+#### 活用例
+- **一括データ移行**: 既存システムからのデータ移行時
+- **初期データ設定**: 新規システム構築時のサンプルデータ
+- **データ補完**: 不完全なCSVデータの補完
+- **自動分類**: 大量データのカテゴリ自動判定
 
-#### 2. facility_images テーブル（画像情報）
-| カラム名 | データ型 | 制約 | 説明 |
-|---------|----------|-----|------|
-| id | INTEGER | PRIMARY KEY AUTOINCREMENT | 画像ID |
-| facility_id | INTEGER | NOT NULL, FOREIGN KEY | 施設ID（facilities.id） |
-| filename | TEXT | NOT NULL | 保存されたファイル名 |
-| original_name | TEXT | NOT NULL | 元のファイル名 |
-| created_at | DATETIME | DEFAULT CURRENT_TIMESTAMP | 作成日時 |
+### 9. 必要に応じたコードカスタマイズ
+- **バリデーション**: 用途に応じた入力検証ルール
+- **検索機能**: 用途特有の検索・フィルター機能
+- **表示ロジック**: 特定フィールドの表示・非表示制御
 
-- **外部キー制約**: `facility_id` → `facilities.id` (ON DELETE CASCADE)
+## 📋 システム要件
 
-
-## 要件
 - **PHP**: 7.4以上
-- **拡張機能**: SQLite3、GD（画像処理）
+- **拡張機能**: SQLite3、GD、Session
+- **Webサーバー**: Apache/Nginx
 - **ブラウザ**: モダンブラウザ（JavaScript有効）
-- **サーバー**: さくらインターネット スタンダードプラン推奨
+- **推奨環境**: さくらインターネット スタンダードプラン
 
-## トラブルシューティング
-- **ログインできない**: `app_db/oyama_curry_map/config.php`のパスワード確認
-- **画像が表示されない**: `facility_images/`ディレクトリの権限確認
-- **データベースエラー**: `app_db/oyama_curry_map/`ディレクトリの権限確認
-- **地図が表示されない**: JavaScript・ネットワーク接続確認
-- **init_db.phpにアクセスできない**: 管理者認証が必要（ログイン後にアクセス）
+## 🚨 注意事項
 
-## 注意事項
-- 初期パスワード（admin123）は必ず変更してください
-- `app_db/oyama_curry_map/config.php`のファイル権限を適切に設定してください
-- 定期的なデータベースバックアップを推奨します
-- 画像ファイルも含めたバックアップ計画を立ててください
-- `init_db.php`は管理者認証が必要です（セキュリティ強化済み）
+### セキュリティ
+- **パスワード変更**: 初期パスワード（admin123）は必ず変更
+- **権限設定**: `config.php` の権限を600に設定
+- **定期バックアップ**: データベースと画像ファイルのバックアップ
+
+### 運用時の注意
+- **画像容量**: 大量の画像アップロードに注意
+- **データベース**: 定期的なVACUUM実行を推奨
+- **セッション**: 30分で自動ログアウト
 
 ## 📄 ライセンス
 
-このプロジェクトは以下のオープンソースライブラリとサービスを使用しています：
-
-### 使用ライブラリ
+このプロジェクトは以下のオープンソースライブラリを使用しています：
 
 | ライブラリ | ライセンス | 用途 |
 |-----------|-----------|------|
 | **Leaflet.js** | BSD-2-Clause | 地図表示ライブラリ |
 | **OpenStreetMap** | Open Database License (ODbL) | 地図データ・タイル |
-| **Nominatim** | Open Database License (ODbL) | 逆ジオコーディング |
+| **Nominatim** | Open Database License (ODbL) | 住所検索 |
 
-### ライセンス詳細
-
-詳細なライセンス情報は以下のファイルを参照してください：
-
-- 📋 [`license/THIRD_PARTY_LICENSES.md`](license/THIRD_PARTY_LICENSES.md) - すべてのサードパーティライセンス
-- 📄 [`license/LICENSE_LEAFLET`](license/LICENSE_LEAFLET) - Leaflet.js ライセンス
-- 📄 [`license/LICENSE_OPENSTREETMAP`](license/LICENSE_OPENSTREETMAP) - OpenStreetMap ライセンス
-
-### 帰属表示
-
-このプロジェクトの地図上には `© OpenStreetMap contributors` の帰属表示が表示されており、OpenStreetMap の利用規約に従っています。
+詳細なライセンス情報：
+- 📋 [`license/THIRD_PARTY_LICENSES.md`](license/THIRD_PARTY_LICENSES.md)
+- 📄 [`license/LICENSE_LEAFLET`](license/LICENSE_LEAFLET)
+- 📄 [`license/LICENSE_OPENSTREETMAP`](license/LICENSE_OPENSTREETMAP)
