@@ -5,7 +5,6 @@
 // auth_check.phpの関数を使用
 require_once 'auth_check.php';
 
-
 // 時刻をHTML time input用にフォーマットする関数
 function formatTimeForInput($time) {
     if (empty($time)) return '';
@@ -44,18 +43,17 @@ function extractFacilityDataFromPost() {
     ];
 }
 
-// 施設データの基本検証（元のコードの条件を完全に再現）
+// 施設データの基本検証
 function validateFacilityData($data, $config) {
     $errors = [];
     
     
-    // 文字数チェック（元のコードでは最初に実行）
+    // 文字数チェック
     if (mb_strlen($data['note']) > 1000) {
         $errors[] = "{$config['app']['field_labels']['note']}は1000文字以内で入力してください";
-        return $errors; // 元のコードと同じく、ここで終了
+        return $errors;
     }
-    
-    // 元のコードと完全に同じ条件: !empty($name) && $lat && $lng && !empty($category)
+
     if (empty($data['name']) || !$data['lat'] || !$data['lng'] || empty($data['category'])) {
         $errors[] = "必要な項目が入力されていません";
     }
@@ -65,7 +63,6 @@ function validateFacilityData($data, $config) {
 
 // 施設名の重複チェック
 function checkFacilityNameDuplicate($db, $name, $config, $excludeId = null) {
-    
     if ($excludeId) {
         // 編集時：自分以外で同じ名前があるかチェック
         $stmt = $db->prepare('SELECT COUNT(*) as cnt FROM facilities WHERE name = :name AND id != :id');
@@ -80,7 +77,6 @@ function checkFacilityNameDuplicate($db, $name, $config, $excludeId = null) {
     $res = $stmt->execute();
     $row = $res->fetchArray(SQLITE3_ASSOC);
     
-    
     if ($row['cnt'] > 0) {
         $errorMsg = "同じ名前の{$config['app']['facility_name']}が既に登録されています";
         return $errorMsg;
@@ -92,8 +88,7 @@ function checkFacilityNameDuplicate($db, $name, $config, $excludeId = null) {
 // 施設データをデータベースに保存
 function saveFacilityData($db, $data, $config, $facilityId = null) {
     $japanTime = date('Y-m-d H:i:s', time());
-    
-    
+ 
     // SQLiteデータベースロック対策
     $db->busyTimeout(30000); // 30秒のタイムアウト
     $db->exec('PRAGMA journal_mode = WAL;'); // WALモードでロック問題を軽減
@@ -287,7 +282,6 @@ function processFacilityForm($facilityId = null) {
     $config = getConfig();
     $message = '';
     $messageType = '';
-    
     
     // CSRF対策
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
