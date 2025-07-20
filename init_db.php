@@ -321,8 +321,7 @@ function generateInsertSQL($config, $tableName) {
     $placeholders = [];
     
     foreach ($columns as $columnName => $columnType) {
-        if ($columnName !== 'id' && $columnName !== 'created_at' && 
-            strpos($columnType, 'DEFAULT CURRENT_TIMESTAMP') === false) {
+        if ($columnName !== 'id' && $columnName !== 'created_at') {
             $insertColumns[] = $columnName;
             $placeholders[] = ":{$columnName}";
         }
@@ -343,9 +342,8 @@ function bindDataFromConfig($stmt, $data, $config, $tableName) {
     $columns = $config['database']['tables'][$tableName]['columns'];
     
     foreach ($columns as $columnName => $columnType) {
-        // idカラムとDEFAULT CURRENT_TIMESTAMPカラムはスキップ
-        if ($columnName === 'id' || $columnName === 'created_at' || 
-            strpos($columnType, 'DEFAULT CURRENT_TIMESTAMP') !== false) {
+        // idカラムとcreated_atカラムはスキップ
+        if ($columnName === 'id' || $columnName === 'created_at') {
             continue;
         }
         
@@ -733,8 +731,14 @@ function resetDatabaseWithSampleData($config) {
     // 動的SQL生成
     $insertSQL = generateInsertSQL($config, 'facilities');
     
+    // 日本時間を取得
+    $japanTime = date('Y-m-d H:i:s', time());
+    
     foreach ($facilities as $facility) {
         $stmt = $db->prepare($insertSQL);
+        
+        // 日本時間のupdated_atを追加
+        $facility['updated_at'] = $japanTime;
         
         // 動的データバインディング
         bindDataFromConfig($stmt, $facility, $config, 'facilities');
@@ -795,6 +799,9 @@ function resetDatabaseWithCSVData($config) {
     // 動的SQL生成
     $insertSQL = generateInsertSQL($config, 'facilities');
     
+    // 日本時間を取得
+    $japanTime = date('Y-m-d H:i:s', time());
+    
     // 設定ファイルから検証パラメータを取得
     $expectedColumns = $config['csv_import']['validation']['expected_columns'];
     $latMin = $config['csv_import']['validation']['lat_min'];
@@ -848,6 +855,9 @@ function resetDatabaseWithCSVData($config) {
             
             // 自動カテゴリ分類
             $mappedData['category'] = categorize_facility($mappedData['name']);
+            
+            // 日本時間のupdated_atを追加
+            $mappedData['updated_at'] = $japanTime;
             
             // カテゴリ別件数をカウント
             $category = $mappedData['category'];
