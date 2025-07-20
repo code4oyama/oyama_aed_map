@@ -30,8 +30,9 @@ $appName = $config['app']['name'];
             <div class="infoView-content">
                 <div class="infoView-options">
                     ■ 免責事項<br>
-                    　掲載情報は参考です<br>　最新の設置状況はご自身でご確認ください<br><br>
-                    <span style="font-size: 1.0em; color: #666;">- 最終更新日:2025/3/19 -<br>
+                    　掲載情報は参考です<br>　最新の設置状況はご自身でご確認ください<br>
+                    <span style="font-size: 1.0em; color: #666;">- 最終更新日:2025/3/19 -<br><br>
+                    <span style="font-size: 1.0em; color: #666;">©2025 Code for OYAMA</span><br>
                 </div>
             </div>
         </div>
