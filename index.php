@@ -29,8 +29,15 @@ $appName = $config['app']['name'];
         <div id="infoView">
             <div class="infoView-content">
                 <div class="infoView-options">
+                    ■ 使い方<br>
+                    小山市のAED設置場所を表示しています<br>
+                    マーカーをタップすると詳細情報を表示<br>
+                    カテゴリー選択:施設種類の絞り込み<br>
+                    現在位置に移動:自位置を中心に地図表示<br>
+                    ■ 施設情報の提供元<br>
+                    小山市提供のオープンデータを利用しています<br>
                     ■ 免責事項<br>
-                    　掲載情報は参考です<br>　最新の設置状況はご自身でご確認ください<br>
+                    掲載情報は参考です<br>最新の設置状況はご自身でご確認ください<br>
                     <span style="font-size: 1.0em; color: #666;">- 最終更新日:2025/3/19 -<br><br>
                     <span style="font-size: 1.0em; color: #666;">©2025 Code for OYAMA</span><br>
                 </div>
