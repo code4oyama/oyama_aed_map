@@ -39,6 +39,7 @@ $appName = $config['app']['name'];
                     ■ 免責事項<br>
                     掲載情報は参考です<br>最新の設置状況はご自身でご確認ください<br>
                     <span style="font-size: 1.0em; color: #666;">- 最終更新日:2025/3/19 -<br><br>
+                    <span style="font-size: 1.0em; color: #666;">GitHub : <a href="https://github.com/code4oyama/oyama_aed_map">oyama_aed_map</a></span><br>
                     <span style="font-size: 1.0em; color: #666;">©2025 <a href="https://code4oyama.org">Code for OYAMA</a></span><br>
                 </div>
             </div>
