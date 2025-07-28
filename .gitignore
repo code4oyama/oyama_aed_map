@@ -9,7 +9,12 @@ facility_images/
 .idea/
 .claude/
 .github/
-CLAUDE.md
+
+# 動作環境
 cookies.txt
 facilities.db-shm
 facilities.db-wal
+
+# その他
+CLAUDE.md
+tech_blog/
